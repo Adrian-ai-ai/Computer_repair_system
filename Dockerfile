@@ -3,10 +3,11 @@ FROM php:8.2-apache
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
-    zip \
+    libzip-dev \
     unzip \
     git \
-    && docker-php-ext-install pdo pdo_pgsql
+    && docker-php-ext-install pdo pdo_pgsql zip \
+    && docker-php-ext-enable pdo_pgsql
 
 # Enable Apache rewrite
 RUN a2enmod rewrite
@@ -14,22 +15,23 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
+# Copy application
 COPY . .
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install -vvv --no-interaction --no-progress
 
-# Fix permissions
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Permissions
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
-# Apache config
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-CMD php artisan config:clear && \
+EXPOSE 80
+
+CMD php artisan key:generate --force && \
+    php artisan config:clear && \
     php artisan config:cache && \
     php artisan route:cache && \
     apache2-foreground
