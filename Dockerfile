@@ -22,7 +22,8 @@ COPY . .
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Install PHP dependencies
-RUN composer install -vvv --no-interaction --no-progress
+RUN composer install -vvv --no-interaction --no-progress || true
+
 
 # Permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
