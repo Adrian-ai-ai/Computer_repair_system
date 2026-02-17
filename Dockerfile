@@ -1,31 +1,27 @@
 FROM php:8.2-apache
 
-# Install ONLY required system libs
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libpq-dev \
-    libzip-dev \
-    && docker-php-ext-install pdo pdo_pgsql zip \
-    && rm -rf /var/lib/apt/lists/*
-
 # Enable Apache rewrite
 RUN a2enmod rewrite
 
+# Install system deps
+RUN apt-get update && apt-get install -y \
+    git unzip libzip-dev \
+    && docker-php-ext-install zip pdo pdo_mysql
+
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy application
-COPY . .
-
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Install PHP dependencies
-RUN composer install --no-dev --prefer-dist --no-interaction --ignore-platform-reqs || composer diagnose || true
+# Copy project files
+COPY . /var/www/html
 
 # Fix permissions
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
 
-EXPOSE 80
+# Point Apache to public directory
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
+    /etc/apache2/sites-available/000-default.conf
 
-CMD apache2-foreground
+# Allow .htaccess
+RUN sed -i 's/AllowOverride None/AllowOverride All/g' \
+    /etc/apache2/apache2.conf
