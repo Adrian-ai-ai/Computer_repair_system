@@ -1,12 +1,26 @@
 # Use official PHP 8.2 Apache image
 FROM php:8.2-apache
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git unzip libpq-dev libzip-dev \
-    libicu-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+# Install system dependencies safely
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    unzip \
+    libpq-dev \
+    libzip-dev \
+    libicu-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
-    && docker-php-ext-install pdo pdo_pgsql zip intl gd bcmath exif sodium \
+    && docker-php-ext-install -j$(nproc) \
+       pdo \
+       pdo_pgsql \
+       zip \
+       intl \
+       gd \
+       bcmath \
+       exif \
+       sodium \
     && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache mod_rewrite
@@ -22,10 +36,9 @@ COPY . .
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Install PHP dependencies
-RUN composer install --no-dev --prefer-dist --no-interaction --ignore-platform-reqs || composer diagnose || true
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-
-# Set proper permissions (important for Laravel)
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
