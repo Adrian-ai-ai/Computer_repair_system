@@ -26,6 +26,7 @@ COPY . .
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+RUN php -m
 # Install PHP dependencies
 RUN composer install --no-dev --no-scripts --prefer-dist --no-interaction
 
