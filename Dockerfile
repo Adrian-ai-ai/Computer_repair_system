@@ -22,7 +22,7 @@ COPY . .
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Install PHP dependencies
-RUN composer install -vvv --no-interaction --no-progress || true
+RUN composer install -vvv --no-interaction --no-progress 
 
 
 # Permissions
@@ -31,8 +31,4 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 
 EXPOSE 80
 
-CMD php artisan key:generate --force && \
-    php artisan config:clear && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    apache2-foreground
+CMD apache2-foreground
