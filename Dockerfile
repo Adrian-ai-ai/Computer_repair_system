@@ -3,10 +3,13 @@ FROM php:8.2-apache
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git unzip libpq-dev libzip-dev \
-    libicu-dev libpng-dev libjpeg-dev libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    libicu-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    && docker-php-ext-configure gd \
+        --with-freetype=/usr/include/ \
+        --with-jpeg=/usr/include/ \
     && docker-php-ext-install pdo pdo_pgsql zip intl gd bcmath exif sodium \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Enable Apache mods
 RUN a2enmod rewrite
