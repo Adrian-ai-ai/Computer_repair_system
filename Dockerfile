@@ -1,32 +1,32 @@
 FROM php:8.2-apache
 
-# System packages
+# Install system dependencies (SAFE SET)
 RUN apt-get update && apt-get install -y \
-    git unzip libpq-dev libzip-dev \
-    libicu-dev libpng-dev libjpeg-dev libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    git \
+    unzip \
+    libpq-dev \
+    libzip-dev \
+    libicu-dev \
     && docker-php-ext-install \
         pdo \
         pdo_pgsql \
         zip \
         intl \
-        gd \
         bcmath \
-        exif \
-        sodium
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache rewrite
 RUN a2enmod rewrite
 
 WORKDIR /var/www/html
 
-# Copy source
+# Copy project files
 COPY . .
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN php -m
 # Install PHP dependencies
 RUN composer install --no-dev --no-scripts --prefer-dist --no-interaction
 
