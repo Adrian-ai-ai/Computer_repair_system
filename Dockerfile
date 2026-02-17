@@ -1,27 +1,29 @@
 FROM php:8.2-apache
 
-# Enable Apache rewrite
-RUN a2enmod rewrite
-
-# Install system deps
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev \
-    && docker-php-ext-install zip pdo pdo_mysql
+    git unzip libpq-dev libzip-dev \
+    libicu-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql zip intl gd bcmath exif sodium \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable Apache mods
+RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
 
 # Copy project files
-COPY . /var/www/html
+COPY . .
 
-# Fix permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Point Apache to public directory
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
-    /etc/apache2/sites-available/000-default.conf
+# Run composer install
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Allow .htaccess
-RUN sed -i 's/AllowOverride None/AllowOverride All/g' \
-    /etc/apache2/apache2.conf
+# Set Apache document root to public folder
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
