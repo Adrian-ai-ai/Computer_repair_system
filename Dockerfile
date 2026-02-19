@@ -36,6 +36,26 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
+# Configure Apache to point to public directory
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+
+# Create .htaccess for Laravel routing
+RUN cat > /var/www/html/public/.htaccess << 'EOF'
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews
+    </IfModule>
+
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} -d [OR]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ ^ [L]
+
+    RewriteRule ^ /index.php [L]
+</IfModule>
+EOF
+
 # Set working directory
 WORKDIR /var/www/html
 
@@ -50,7 +70,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-di
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
 # Expose port 80
 EXPOSE 80
