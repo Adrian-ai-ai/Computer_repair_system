@@ -5,6 +5,7 @@ FROM php:8.2-apache
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     apt-utils \
+    build-essential \
     git \
     unzip \
     libpq-dev \
@@ -13,6 +14,7 @@ RUN apt-get update && \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
+    libsodium-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions separately for better error handling
@@ -22,8 +24,10 @@ RUN docker-php-ext-install -j$(nproc) \
     zip \
     intl \
     bcmath \
-    exif \
-    sodium
+    exif
+
+# Install sodium extension
+RUN docker-php-ext-install -j$(nproc) sodium
 
 # Install GD extension with proper configuration
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
