@@ -9,19 +9,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libzip-dev \
     libicu-dev \
     libpng-dev \
-    libjpeg62-turbo-dev \
+    libjpeg-dev \
     libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-       pdo \
-       pdo_pgsql \
-       zip \
-       intl \
-       gd \
-       bcmath \
-       exif \
-       sodium \
     && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions separately for better error handling
+RUN docker-php-ext-install -j$(nproc) \
+    pdo \
+    pdo_pgsql \
+    zip \
+    intl \
+    bcmath \
+    exif \
+    sodium
+
+# Install GD extension with proper configuration
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
