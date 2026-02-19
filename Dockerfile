@@ -39,23 +39,6 @@ RUN a2enmod rewrite
 # Configure Apache to point to public directory
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
-# Create .htaccess for Laravel routing
-RUN cat > /var/www/html/public/.htaccess << 'EOF'
-<IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews
-    </IfModule>
-
-    RewriteEngine On
-
-    RewriteCond %{REQUEST_FILENAME} -d [OR]
-    RewriteCond %{REQUEST_FILENAME} -f
-    RewriteRule ^ ^ [L]
-
-    RewriteRule ^ /index.php [L]
-</IfModule>
-EOF
-
 # Set working directory
 WORKDIR /var/www/html
 
