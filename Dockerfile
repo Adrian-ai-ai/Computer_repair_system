@@ -1,15 +1,17 @@
 # Use official PHP 8.2 Apache image
 FROM php:8.2-apache
 
-# Install system dependencies safely
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies with proper error handling
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    apt-utils \
     git \
     unzip \
     libpq-dev \
     libzip-dev \
     libicu-dev \
     libpng-dev \
-    libjpeg-dev \
+    libjpeg62-turbo-dev \
     libfreetype6-dev \
     && rm -rf /var/lib/apt/lists/*
 
