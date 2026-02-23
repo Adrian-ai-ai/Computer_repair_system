@@ -16,10 +16,6 @@ RUN apt-get update && \
     libsodium-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Fix Apache MPM conflict (IMPORTANT)
-RUN a2dismod mpm_event mpm_worker || true \
-    && a2enmod mpm_prefork
-
 # Enable Apache rewrite
 RUN a2enmod rewrite
 
@@ -58,5 +54,9 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
 EXPOSE 80
+
+# Final MPM fix to ensure only one MPM is enabled at runtime
+RUN a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork
 
 CMD ["apache2-foreground"]
