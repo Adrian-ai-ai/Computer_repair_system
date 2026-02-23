@@ -1,7 +1,6 @@
-# Use official PHP 8.2 Apache image
 FROM php:8.2-apache
 
-# Install system dependencies with proper error handling
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     apt-utils \
@@ -17,52 +16,47 @@ RUN apt-get update && \
     libsodium-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions separately for better error handling
+# Fix Apache MPM conflict (IMPORTANT)
+RUN a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork
+
+# Enable Apache rewrite
+RUN a2enmod rewrite
+
+# PHP extensions
 RUN docker-php-ext-install -j$(nproc) \
     pdo \
     pdo_pgsql \
     zip \
     intl \
     bcmath \
-    exif
+    exif \
+    sodium
 
- # Fix Apache MPM conflict
-RUN a2dismod mpm_event mpm_worker || true \
-    && a2enmod mpm_prefork
-       
-# Install sodium extension
-RUN docker-php-ext-install -j$(nproc) sodium
-
-# Install GD extension with proper configuration
+# GD extension
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Configure Apache document root
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
+    /etc/apache2/sites-available/000-default.conf
 
-# Configure Apache to point to public directory
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
-
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
+# Copy app
 COPY . .
 
-# Copy Composer from official image
+# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Set permissions
+# Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
-# Expose port 80
 EXPOSE 80
 
-# Start Apache
 CMD ["apache2-foreground"]
