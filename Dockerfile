@@ -26,6 +26,10 @@ RUN docker-php-ext-install -j$(nproc) \
     bcmath \
     exif
 
+ # Fix Apache MPM conflict
+RUN a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork
+       
 # Install sodium extension
 RUN docker-php-ext-install -j$(nproc) sodium
 
