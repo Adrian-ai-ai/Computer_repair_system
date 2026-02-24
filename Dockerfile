@@ -1,5 +1,9 @@
 FROM php:8.2-apache
 
+# 🔴 FIX MPM CONFLICT FIRST (CRITICAL)
+RUN a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork
+
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -16,7 +20,7 @@ RUN apt-get update && \
     libsodium-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache rewrite
+# Enable Apache rewrite (SAFE now)
 RUN a2enmod rewrite
 
 # PHP extensions
@@ -39,12 +43,10 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
 
 WORKDIR /var/www/html
 
-# Copy app
 COPY . .
 
-# Install Composer
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
 # Permissions
@@ -52,11 +54,5 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
-
-EXPOSE 80
-
-# Final MPM fix to ensure only one MPM is enabled at runtime
-RUN a2dismod mpm_event mpm_worker || true \
-    && a2enmod mpm_prefork
 
 CMD ["apache2-foreground"]
