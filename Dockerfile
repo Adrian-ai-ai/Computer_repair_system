@@ -1,7 +1,9 @@
+
+# Use official PHP-Apache image
 FROM php:8.2-apache
 
-# 🔴 FIX MPM CONFLICT FIRST (CRITICAL)
-RUN a2dismod mpm_event mpm_worker || true \
+# Ensure only mpm_prefork is enabled (disable all others)
+RUN a2dismod mpm_event mpm_worker mpm_itk mpm_prefork || true \
     && a2enmod mpm_prefork
 
 # Install system dependencies
