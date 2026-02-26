@@ -45,16 +45,20 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
 
 WORKDIR /var/www/html
 
+# Copy project files
 COPY . .
 
-# Composer
+# Copy Composer from official image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-
-# Permissions
-RUN chown -R www-data:www-data /var/www/html \
+# Create storage directories and set permissions
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
+    && chmod -R 777 storage bootstrap/cache
+
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
