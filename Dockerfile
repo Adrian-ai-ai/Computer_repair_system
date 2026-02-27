@@ -42,6 +42,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
     /etc/apache2/sites-available/000-default.conf
 
+# Configure Apache to listen on port 57198
+RUN sed -i 's/Listen 80/Listen 57198/g' /etc/apache2/ports.conf \
+    && sed -i 's/:80/:57198/g' /etc/apache2/sites-available/000-default.conf
+
+# Expose port 57198
+EXPOSE 57198
+
 WORKDIR /var/www/html
 
 # Copy project files
@@ -50,7 +57,6 @@ COPY . .
 # Copy Composer from official image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Create storage directories and set permissions
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
@@ -60,8 +66,5 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
-
-# Expose port 80
-EXPOSE 8080
 
 CMD ["apache2-foreground"]
