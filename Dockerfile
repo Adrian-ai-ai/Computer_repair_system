@@ -1,6 +1,10 @@
 # Use official PHP-Apache image
 FROM php:8.2-apache
 
+# Ensure only mpm_prefork is enabled (disable all others)
+RUN a2dismod mpm_event mpm_worker mpm_itk || true \
+    && a2enmod mpm_prefork
+
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -56,5 +60,8 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
+
+# Expose port 80
+EXPOSE 8080
 
 CMD ["apache2-foreground"]
