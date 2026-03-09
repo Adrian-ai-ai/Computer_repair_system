@@ -325,8 +325,18 @@
                 <span>Discount:</span>
                 <span>@if($quotation->discount > 0) ZMW{{ number_format($quotation->discount, 2) }} @else ZMW0.00 @endif</span>
             </div>
+            <div class="summary-row" style="border-top: 2px solid #cbd5e1; margin-top: 10px; padding-top: 15px;">
+                <span style="font-weight: 600;">Grand Total:</span>
+                <span style="font-weight: 600;">
+                    @if($quotation->total_amount > 0) 
+                        ZMW{{ number_format($quotation->subtotal + $quotation->tax - $quotation->discount, 2) }}
+                    @else 
+                        <span style="color: #6b7280; font-style: italic;">To be determined</span>
+                    @endif
+                </span>
+            </div>
             <div class="summary-row total">
-                <span>Total Amount:</span>
+                <span>Final Amount Due:</span>
                 <span>@if($quotation->total_amount > 0) ZMW{{ number_format($quotation->total_amount, 2) }} @else <span style="color: #6b7280; font-style: italic;">To be determined</span> @endif</span>
             </div>
         </div>

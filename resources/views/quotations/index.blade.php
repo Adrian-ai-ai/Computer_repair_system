@@ -191,6 +191,12 @@
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                     </svg>
                                                 </button>
+                                                <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" 
+                                                        onclick="rejectQuotation({{ $quotation->id }})" title="Reject">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
                                                 @endif
                                                 @if($quotation->status == 'pending' && auth()->user()->role !== 'technician')
                                                 <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" 
@@ -253,6 +259,30 @@ function acceptQuotation(quotationId) {
         .catch(error => {
             console.error('Error:', error);
             alert('Error accepting quotation');
+        });
+    }
+}
+
+function rejectQuotation(quotationId) {
+    if (confirm('Are you sure you want to reject this quotation? This action cannot be undone.')) {
+        fetch(`/quotations/${quotationId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error rejecting quotation: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error rejecting quotation');
         });
     }
 }
