@@ -88,15 +88,15 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
     && chmod -R 755 /var/www/html \
     && chmod -R 777 storage bootstrap/cache
 
-# Create .env file if it doesn't exist and set permissions
-RUN if [ ! -f .env ]; then cp .env.example .env; fi \
-    && chmod 644 .env \
-    && php artisan key:generate --force
-
 # Install PHP dependencies
 RUN /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
+
+# Create .env file if it doesn't exist and set permissions
+RUN if [ ! -f .env ]; then cp .env.example .env; fi \
+    && chmod 644 .env \
+    && php artisan key:generate --force
 
 # Laravel optimizations
 RUN php artisan config:cache \
