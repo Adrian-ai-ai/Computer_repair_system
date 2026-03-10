@@ -56,7 +56,8 @@ RUN sed -i 's/;clear_env = no/clear_env = no/' /etc/php/8.2/fpm/pool.d/www.conf 
     && sed -i 's/;pm.max_children = 5/pm.max_children = 50/' /etc/php/8.2/fpm/pool.d/www.conf \
     && sed -i 's/;pm.start_servers = 2/pm.start_servers = 5/' /etc/php/8.2/fpm/pool.d/www.conf \
     && sed -i 's/;pm.min_spare_servers = 1/pm.min_spare_servers = 2/' /etc/php/8.2/fpm/pool.d/www.conf \
-    && sed -i 's/;pm.max_spare_servers = 3/pm.max_spare_servers = 5/' /etc/php/8.2/fpm/pool.d/www.conf
+    && sed -i 's/;pm.max_spare_servers = 3/pm.max_spare_servers = 5/' /etc/php/8.2/fpm/pool.d/www.conf \
+    && sed -i 's/listen = \/run\/php\/php8.2-fpm.sock/listen = 127.0.0.1:9000/' /etc/php/8.2/fpm/pool.d/www.conf
 
 # Configure Apache to use PHP FPM and ensure only mpm_prefork
 RUN a2enmod rewrite \
@@ -119,6 +120,13 @@ RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
 RUN echo "#!/bin/bash" > /start.sh \
     && echo "# Start PHP-FPM" >> /start.sh \
     && echo "service php8.2-fpm start" >> /start.sh \
+    && echo "sleep 2" >> /start.sh \
+    && echo "# Check if PHP-FPM is running" >> /start.sh \
+    && echo "if ! pgrep -f 'php-fpm' > /dev/null; then" >> /start.sh \
+    && echo "    echo 'PHP-FPM failed to start, exiting...'" >> /start.sh \
+    && echo "    exit 1" >> /start.sh \
+    && echo "fi" >> /start.sh \
+    && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
     && echo "apache2ctl -D FOREGROUND" >> /start.sh \
