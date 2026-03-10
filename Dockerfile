@@ -16,7 +16,8 @@ RUN apt-get update && \
     && apt-get update
 
 # Install system dependencies, Apache, and PHP
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     apache2 \
     php8.2 \
     php8.2-fpm \
@@ -41,6 +42,8 @@ RUN apt-get install -y --no-install-recommends \
     git \
     unzip \
     curl \
+    nodejs \
+    npm \
     libpq-dev \
     libzip-dev \
     libicu-dev \
@@ -110,6 +113,10 @@ RUN php artisan config:cache \
     && php artisan view:cache \
     && php artisan migrate --force \
     && php artisan storage:link
+
+# Build frontend assets
+RUN npm install \
+    && npm run build
 
 # Create Apache virtual host configuration using echo
 RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
