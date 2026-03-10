@@ -125,6 +125,14 @@ RUN php artisan config:cache \
 RUN npm install \
     && npm run build
 
+# Set proper permissions for build directory and verify assets
+RUN chown -R www-data:www-data public/build \
+    && chmod -R 755 public/build \
+    && echo "Checking if manifest.json exists:" \
+    && ls -la public/build/ \
+    && echo "Checking manifest.json content:" \
+    && cat public/build/manifest.json || echo "manifest.json not found"
+
 # Create Apache virtual host configuration using echo
 RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
     && echo "    ServerName localhost" >> /etc/apache2/sites-available/000-default.conf \
@@ -133,6 +141,13 @@ RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
     && echo "    <Directory /var/www/html/public>" >> /etc/apache2/sites-available/000-default.conf \
     && echo "        Options Indexes FollowSymLinks" >> /etc/apache2/sites-available/000-default.conf \
     && echo "        AllowOverride All" >> /etc/apache2/sites-available/000-default.conf \
+    && echo "        Require all granted" >> /etc/apache2/sites-available/000-default.conf \
+    && echo "    </Directory>" >> /etc/apache2/sites-available/000-default.conf \
+    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
+    && echo "    # Serve static assets directly" >> /etc/apache2/sites-available/000-default.conf \
+    && echo "    <Directory /var/www/html/public/build>" >> /etc/apache2/sites-available/000-default.conf \
+    && echo "        Options -Indexes" >> /etc/apache2/sites-available/000-default.conf \
+    && echo "        AllowOverride None" >> /etc/apache2/sites-available/000-default.conf \
     && echo "        Require all granted" >> /etc/apache2/sites-available/000-default.conf \
     && echo "    </Directory>" >> /etc/apache2/sites-available/000-default.conf \
     && echo "    " >> /etc/apache2/sites-available/000-default.conf \
