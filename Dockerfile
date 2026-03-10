@@ -23,6 +23,7 @@ RUN apt-get install -y --no-install-recommends \
     php8.2-cli \
     php8.2-pgsql \
     php8.2-pdo \
+    php8.2-sqlite3 \
     php8.2-zip \
     php8.2-intl \
     php8.2-bcmath \
