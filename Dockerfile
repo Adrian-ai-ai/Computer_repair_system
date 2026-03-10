@@ -27,7 +27,6 @@ RUN apt-get install -y --no-install-recommends \
     php8.2-intl \
     php8.2-bcmath \
     php8.2-exif \
-    php8.2-sodium \
     php8.2-gd \
     php8.2-mbstring \
     php8.2-xml \
