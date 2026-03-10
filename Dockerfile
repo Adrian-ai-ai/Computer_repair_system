@@ -15,6 +15,10 @@ RUN apt-get update && \
     && add-apt-repository ppa:ondrej/php -y \
     && apt-get update
 
+# Add Node.js 20 repository
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get update
+
 # Install system dependencies, Apache, and PHP
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
