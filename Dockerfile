@@ -110,7 +110,7 @@ RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
     && echo "        SetHandler \"proxy:fcgi://127.0.0.1:9000\"" >> /etc/apache2/sites-available/000-default.conf \
     && echo "    </FilesMatch>" >> /etc/apache2/sites-available/000-default.conf \
     && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    ProxyPassMatch ^/(.*\.php(/.*)?$ fcgi://127.0.0.1:9000/var/www/html/public/\$1" >> /etc/apache2/sites-available/000-default.conf \
+    && echo "    ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://127.0.0.1:9000/var/www/html/public/\$1" >> /etc/apache2/sites-available/000-default.conf \
     && echo "    DirectoryIndex index.php index.html" >> /etc/apache2/sites-available/000-default.conf \
     && echo "</VirtualHost>" >> /etc/apache2/sites-available/000-default.conf
 
