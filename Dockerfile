@@ -46,8 +46,6 @@ RUN apt-get update && \
     git \
     unzip \
     curl \
-    nodejs \
-    npm \
     libpq-dev \
     libzip-dev \
     libicu-dev \
@@ -58,6 +56,11 @@ RUN apt-get update && \
     build-essential \
     apt-utils \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20 and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest
 
 # Configure PHP FPM
 RUN sed -i 's/;clear_env = no/clear_env = no/' /etc/php/8.2/fpm/pool.d/www.conf \
