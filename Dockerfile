@@ -120,7 +120,7 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "service php8.2-fpm start" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
-    && echo "apache2-foreground" >> /start.sh \
+    && echo "apache2ctl -D FOREGROUND" >> /start.sh \
     && chmod +x /start.sh
 
 # Expose port 80
