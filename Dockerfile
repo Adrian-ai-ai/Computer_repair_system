@@ -4,9 +4,19 @@ FROM ubuntu:22.04
 # Set environment variables to avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies, Apache, and PHP
+# Add PHP PPA repository for PHP 8.2
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    software-properties-common \
+    ca-certificates \
+    lsb-release \
+    apt-transport-https \
+    gnupg \
+    && add-apt-repository ppa:ondrej/php -y \
+    && apt-get update
+
+# Install system dependencies, Apache, and PHP
+RUN apt-get install -y --no-install-recommends \
     apache2 \
     php8.2 \
     php8.2-fpm \
@@ -34,7 +44,7 @@ RUN apt-get update && \
     libzip-dev \
     libicu-dev \
     libpng-dev \
-    libjpeg62-turbo-dev \
+    libjpeg-dev \
     libfreetype6-dev \
     libsodium-dev \
     build-essential \
