@@ -84,10 +84,15 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
     && chmod +x /usr/local/bin/composer
 
 # Create storage directories and set permissions
-RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache database \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
-    && chmod -R 777 storage bootstrap/cache
+    && chmod -R 777 storage bootstrap/cache database
+
+# Create SQLite database file if it doesn't exist
+RUN if [ ! -f database/database.sqlite ]; then touch database/database.sqlite; fi \
+    && chmod 666 database/database.sqlite \
+    && chown www-data:www-data database/database.sqlite
 
 # Install PHP dependencies
 RUN /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
