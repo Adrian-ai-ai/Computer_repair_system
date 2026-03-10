@@ -2,8 +2,10 @@
 FROM php:8.2-apache
 
 # Ensure only mpm_prefork is enabled (disable all others)
-RUN a2dismod mpm_event mpm_worker mpm_itk || true \
-    && a2enmod mpm_prefork
+RUN a2dismod mpm_event mpm_worker mpm_itk mpm_prefork || true \
+    && rm -f /etc/apache2/mods-enabled/mpm_* \
+    && a2enmod mpm_prefork \
+    && echo "LoadModule mpm_prefork_module /usr/lib/apache2/modules/mod_mpm_prefork.so" > /etc/apache2/mods-available/mpm_prefork.load
 
 # Install system dependencies
 RUN apt-get update && \
@@ -42,12 +44,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
     /etc/apache2/sites-available/000-default.conf
 
-# Configure Apache to listen on port 57198
-RUN sed -i 's/Listen 80/Listen 57198/g' /etc/apache2/ports.conf \
-    && sed -i 's/:80/:57198/g' /etc/apache2/sites-available/000-default.conf
+# Configure Apache to listen on default port 80
+# (Apache already listens on port 80 by default, no changes needed)
 
-# Expose port 57198
-EXPOSE 57198
+# Expose port 80 (default Apache port)
+EXPOSE 80
 
 WORKDIR /var/www/html
 
