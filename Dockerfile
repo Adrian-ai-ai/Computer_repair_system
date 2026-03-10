@@ -67,8 +67,9 @@ RUN a2enmod rewrite \
     && a2disconf php8.2-fpm \
     && a2enconf php8.2-fpm
 
-# Configure Apache ports
-RUN echo "Listen 80" > /etc/apache2/ports.conf
+# Configure Apache ports and add ServerName
+RUN echo "Listen 80" > /etc/apache2/ports.conf \
+    && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Set working directory
 WORKDIR /var/www/html
