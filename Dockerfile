@@ -39,6 +39,7 @@ RUN apt-get install -y --no-install-recommends \
     libapache2-mod-php8.2 \
     git \
     unzip \
+    curl \
     libpq-dev \
     libzip-dev \
     libicu-dev \
