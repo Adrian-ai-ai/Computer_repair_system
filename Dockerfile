@@ -94,15 +94,10 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
     && chmod +x /usr/local/bin/composer
 
 # Create storage directories and set permissions
-RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache database \
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
-    && chmod -R 777 storage bootstrap/cache database
-
-# Create SQLite database file if it doesn't exist
-RUN if [ ! -f database/database.sqlite ]; then touch database/database.sqlite; fi \
-    && chmod 666 database/database.sqlite \
-    && chown www-data:www-data database/database.sqlite
+    && chmod -R 777 storage bootstrap/cache
 
 # Install PHP dependencies
 RUN /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
@@ -117,7 +112,13 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
 # Set production environment variables for proper asset loading
 RUN sed -i 's/APP_ENV=local/APP_ENV=production/' .env \
     && sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env \
-    && sed -i 's/APP_URL=http:\/\/localhost/APP_URL=https:\/\/computerrepairsystem-production.up.railway.app\//' .env
+    && sed -i 's/APP_URL=http:\/\/localhost/APP_URL=https:\/\/computerrepairsystem-production.up.railway.app\//' .env \
+    && sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env \
+    && sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=${RAILWAY_PRIVATE_SERVICE_HOSTNAME}/' .env \
+    && sed -i 's/# DB_PORT=3306/DB_PORT=${RAILWAY_PRIVATE_SERVICE_PORT}/' .env \
+    && sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=${RAILWAY_ENVIRONMENT}/' .env \
+    && sed -i 's/# DB_USERNAME=root/DB_USERNAME=${POSTGRES_USER}/' .env \
+    && sed -i 's/# DB_PASSWORD=/DB_PASSWORD=${POSTGRES_PASSWORD}/' .env
 
 # Laravel optimizations
 RUN php artisan config:cache \
