@@ -212,6 +212,15 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "    touch database/database.sqlite && chmod 666 database/database.sqlite" >> /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
+    && echo "# Check if assets exist and verify they're accessible" >> /start.sh \
+    && echo "echo '=== CHECKING ASSETS ==='" >> /start.sh \
+    && echo "if [ ! -d 'public/build/assets' ]; then" >> /start.sh \
+    && echo "    echo 'ERROR: Assets directory not found!'" >> /start.sh \
+    && echo "    ls -la public/" >> /start.sh \
+    && echo "else" >> /start.sh \
+    && echo "    echo 'Assets directory found'" >> /start.sh \
+    && echo "fi" >> /start.sh \
+    && echo " " >> /start.sh \
     && echo "# Fix asset permissions for Apache" >> /start.sh \
     && echo "echo '=== FIXING ASSET PERMISSIONS ==='" >> /start.sh \
     && echo "chown -R www-data:www-data public/build/" >> /start.sh \
