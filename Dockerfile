@@ -195,8 +195,21 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "php artisan config:clear" >> /start.sh \
     && echo "php artisan config:cache" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Run database migrations at runtime" >> /start.sh \
-    && echo "php artisan migrate --force" >> /start.sh \
+    && echo "# Wait for database to be ready and run migrations with retry" >> /start.sh \
+    && echo "echo 'Waiting for database connection...'" >> /start.sh \
+    && echo "for i in {1..30}; do" >> /start.sh \
+    && echo "    if php artisan migrate:status > /dev/null 2>&1; then" >> /start.sh \
+    && echo "        echo 'Database is ready, running migrations...'" >> /start.sh \
+    && echo "        php artisan migrate --force" >> /start.sh \
+    && echo "        break" >> /start.sh \
+    && echo "    else" >> /start.sh \
+    && echo "        echo 'Database not ready yet, retrying in 2 seconds... (attempt \$i/30)'" >> /start.sh \
+    && echo "        sleep 2" >> /start.sh \
+    && echo "    fi" >> /start.sh \
+    && echo "    if [ \$i -eq 30 ]; then" >> /start.sh \
+    && echo "        echo 'Database connection failed after 30 attempts, starting anyway...'" >> /start.sh \
+    && echo "    fi" >> /start.sh \
+    && echo "done" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
     && echo "apache2ctl -D FOREGROUND" >> /start.sh \
