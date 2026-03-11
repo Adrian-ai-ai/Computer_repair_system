@@ -115,7 +115,7 @@ RUN sed -i 's/APP_ENV=local/APP_ENV=production/' .env \
     && sed -i 's/APP_URL=http:\/\/localhost/APP_URL=https:\/\/computerrepairsystem-production.up.railway.app\//' .env \
     && sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env \
     && sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=${RAILWAY_PRIVATE_SERVICE_HOSTNAME}/' .env \
-    && sed -i 's/# DB_PORT=3306/DB_PORT=${RAILWAY_PRIVATE_SERVICE_PORT}/' .env \
+    && sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env \
     && sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=${RAILWAY_ENVIRONMENT}/' .env \
     && sed -i 's/# DB_USERNAME=root/DB_USERNAME=${POSTGRES_USER}/' .env \
     && sed -i 's/# DB_PASSWORD=/DB_PASSWORD=${POSTGRES_PASSWORD}/' .env
