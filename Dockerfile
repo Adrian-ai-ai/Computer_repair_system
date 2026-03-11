@@ -183,41 +183,19 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Show all environment variables for debugging" >> /start.sh \
-    && echo "echo '=== ENVIRONMENT VARIABLES ==='" >> /start.sh \
-    && echo "env | grep -E '(DATABASE|RAILWAY|POSTGRES)' | sort" >> /start.sh \
+    && echo "# Show ALL environment variables to see what Railway actually provides" >> /start.sh \
+    && echo "echo '=== ALL ENVIRONMENT VARIABLES FROM RAILWAY ==='" >> /start.sh \
+    && echo "printenv | sort" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Update database configuration for PostgreSQL" >> /start.sh \
     && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
-    && echo "# Use DATABASE_URL to extract connection details" >> /start.sh \
-    && echo "if [ ! -z \"\$DATABASE_URL\" ]; then" >> /start.sh \
-    && echo "    echo '=== FOUND DATABASE_URL ==='" >> /start.sh \
-    && echo "    echo \"DATABASE_URL: \$DATABASE_URL\"" >> /start.sh \
-    && echo "    # Parse DATABASE_URL: postgresql://user:pass@host:port/db" >> /start.sh \
-    && echo "    DB_HOST=\$(echo \$DATABASE_URL | sed -n 's/.*@\\([^:]*\\):.*/\\1/p')" >> /start.sh \
-    && echo "    DB_PORT=\$(echo \$DATABASE_URL | sed -n 's/.*:\\([0-9]*\\)\\/.*/\\1/p')" >> /start.sh \
-    && echo "    DB_DATABASE=\$(echo \$DATABASE_URL | sed -n 's/.*\\/\\([^?]*\\).*/\\1/p')" >> /start.sh \
-    && echo "    DB_USERNAME=\$(echo \$DATABASE_URL | sed -n 's/.*:\\/\\/[^:]*:\\([^@]*\\)@.*/\\1/p')" >> /start.sh \
-    && echo "    DB_PASSWORD=\$(echo \$DATABASE_URL | sed -n 's/.*:\\/\\/[^:]*:[^@]*@[^:]*:\\([^@]*\\)@.*/\\1/p')" >> /start.sh \
-    && echo "    echo \"Parsed DB_HOST: \$DB_HOST\"" >> /start.sh \
-    && echo "    echo \"Parsed DB_PORT: \$DB_PORT\"" >> /start.sh \
-    && echo "    echo \"Parsed DB_DATABASE: \$DB_DATABASE\"" >> /start.sh \
-    && echo "    echo \"Parsed DB_USERNAME: \$DB_USERNAME\"" >> /start.sh \
-    && echo "    echo \"Parsed DB_PASSWORD: [HIDDEN]\"" >> /start.sh \
-    && echo "    sed -i \"s/# DB_HOST=127.0.0.1/DB_HOST=\$DB_HOST/\" .env" >> /start.sh \
-    && echo "    sed -i \"s/# DB_PORT=3306/DB_PORT=\$DB_PORT/\" .env" >> /start.sh \
-    && echo "    sed -i \"s/# DB_DATABASE=laravel/DB_DATABASE=\$DB_DATABASE/\" .env" >> /start.sh \
-    && echo "    sed -i \"s/# DB_USERNAME=root/DB_USERNAME=\$DB_USERNAME/\" .env" >> /start.sh \
-    && echo "    sed -i \"s/# DB_PASSWORD=/DB_PASSWORD=\$DB_PASSWORD/\" .env" >> /start.sh \
-    && echo "else" >> /start.sh \
-    && echo "    echo '=== DATABASE_URL NOT FOUND ==='" >> /start.sh \
-    && echo "    echo 'DATABASE_URL not found, using fallback variables'" >> /start.sh \
-    && echo "    sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=\${RAILWAY_PRIVATE_SERVICE_HOSTNAME}/' .env" >> /start.sh \
-    && echo "    sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
-    && echo "    sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=\${RAILWAY_ENVIRONMENT}/' .env" >> /start.sh \
-    && echo "    sed -i 's/# DB_USERNAME=root/DB_USERNAME=\${POSTGRES_USER}/' .env" >> /start.sh \
-    && echo "    sed -i 's/# DB_PASSWORD=/DB_PASSWORD=\${POSTGRES_PASSWORD}/' .env" >> /start.sh \
-    && echo "fi" >> /start.sh \
+    && echo "# For now, use hardcoded values that we know work for Railway PostgreSQL" >> /start.sh \
+    && echo "echo 'Using known Railway PostgreSQL configuration...'" >> /start.sh \
+    && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=hopper.proxy.rlwy.net/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=railway/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=postgres/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=VaZwHfotxlquvIJcxNQSAAzRAVQSmjaI/' .env" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Debug: Show current database configuration" >> /start.sh \
     && echo "echo '=== FINAL DATABASE CONFIGURATION ==='" >> /start.sh \
