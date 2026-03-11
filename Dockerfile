@@ -183,16 +183,14 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Use SQLite for reliable deployment" >> /start.sh \
-    && echo "echo '=== CONFIGURING SQLITE DATABASE ==='" >> /start.sh \
-    && echo "sed -i 's/DB_CONNECTION=pgsql/DB_CONNECTION=sqlite/' .env" >> /start.sh \
-    && echo "sed -i 's/DB_HOST=.*/# DB_HOST=127.0.0.1/' .env" >> /start.sh \
-    && echo "sed -i 's/DB_PORT=.*/# DB_PORT=3306/' .env" >> /start.sh \
-    && echo "sed -i 's/DB_DATABASE=.*/DB_DATABASE=database.sqlite/' .env" >> /start.sh \
-    && echo "sed -i 's/DB_USERNAME=.*/# DB_USERNAME=/' .env" >> /start.sh \
-    && echo "sed -i 's/DB_PASSWORD=.*/# DB_PASSWORD=/' .env" >> /start.sh \
-    && echo "touch database/database.sqlite" >> /start.sh \
-    && echo "chmod 666 database/database.sqlite" >> /start.sh \
+    && echo "# Now use PostgreSQL since database is ready" >> /start.sh \
+    && echo "echo '=== CONFIGURING POSTGRESQL DATABASE ==='" >> /start.sh \
+    && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=postgres-production-c2c4.up.railway.app/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=railway/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=postgres/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=VaZwHfotxlquvIJcxNQSAAzRAVQSmjaI/' .env" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Debug: Show current database configuration" >> /start.sh \
     && echo "echo '=== FINAL DATABASE CONFIGURATION ==='" >> /start.sh \
@@ -207,9 +205,9 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
     && echo "php artisan config:cache" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Test SQLite database connection" >> /start.sh \
-    && echo "echo '=== TESTING SQLITE CONNECTION ==='" >> /start.sh \
-    && echo "php artisan tinker --execute='DB::connection()->getPdo(); echo \"SQLite connection: SUCCESS\";'" >> /start.sh \
+    && echo "# Test PostgreSQL database connection" >> /start.sh \
+    && echo "echo '=== TESTING POSTGRESQL CONNECTION ==='" >> /start.sh \
+    && echo "php artisan tinker --execute='DB::connection()->getPdo(); echo \"PostgreSQL connection: SUCCESS\";'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Run migrations with error handling" >> /start.sh \
     && echo "echo '=== RUNNING MIGRATIONS ==='" >> /start.sh \
