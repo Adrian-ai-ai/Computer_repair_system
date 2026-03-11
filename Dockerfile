@@ -183,9 +183,9 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Use correct Railway PostgreSQL URL from environment variables" >> /start.sh \
+    && echo "# Update database configuration for PostgreSQL" >> /start.sh \
     && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
-    && echo "echo 'Using correct Railway PostgreSQL configuration...'" >> /start.sh \
+    && echo "echo 'Using Railway PostgreSQL configuration...'" >> /start.sh \
     && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=postgres-production-c2c4.up.railway.app/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=railway/' .env" >> /start.sh \
@@ -205,18 +205,13 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
     && echo "php artisan config:cache" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Test basic Laravel functionality" >> /start.sh \
-    && echo "echo '=== TESTING LARAVEL ==='" >> /start.sh \
-    && echo "php artisan --version || echo 'Laravel CLI failed'" >> /start.sh \
-    && echo "php artisan route:list | head -5 || echo 'Route list failed'" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Try database connection with timeout" >> /start.sh \
-    && echo "echo '=== TESTING DATABASE CONNECTION ==='" >> /start.sh \
-    && echo "timeout 10 php artisan tinker --execute=\"DB::connection()->getPdo(); echo 'Database connection successful';\" 2>/dev/null || echo 'Database connection failed'" >> /start.sh \
+    && echo "# Test Laravel database connection" >> /start.sh \
+    && echo "echo '=== TESTING LARAVEL DATABASE CONNECTION ==='" >> /start.sh \
+    && echo "php artisan tinker --execute=\"try { DB::connection()->getPdo(); echo 'Laravel DB connection: SUCCESS'; } catch (Exception \$e) { echo 'Laravel DB connection: FAILED - ' . \$e->getMessage(); }\"" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Run migrations with error handling" >> /start.sh \
     && echo "echo '=== RUNNING MIGRATIONS ==='" >> /start.sh \
-    && echo "php artisan migrate --force || echo 'Migrations failed'" >> /start.sh \
+    && echo "php artisan migrate --force || echo 'Migrations failed - check Laravel error above'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
     && echo "echo '=== STARTING APACHE ==='" >> /start.sh \
