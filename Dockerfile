@@ -208,9 +208,19 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "    touch database/database.sqlite && chmod 666 database/database.sqlite" >> /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Build Vite assets to fix styling" >> /start.sh \
-    && echo "echo '=== BUILDING VITE ASSETS ==='" >> /start.sh \
-    && echo "npm run build || echo 'Vite build failed, but continuing...'" >> /start.sh \
+    && echo "# Check if assets exist and build if needed" >> /start.sh \
+    && echo "echo '=== CHECKING ASSETS ==='" >> /start.sh \
+    && echo "if [ ! -f 'public/build/assets/app.css' ]; then" >> /start.sh \
+    && echo "    echo 'Assets not found, building with Vite...'" >> /start.sh \
+    && echo "    npm run build" >> /start.sh \
+    && echo "else" >> /start.sh \
+    && echo "    echo 'Assets already exist'" >> /start.sh \
+    && echo "fi" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# List built assets for debugging" >> /start.sh \
+    && echo "echo '=== BUILT ASSETS ==='" >> /start.sh \
+    && echo "ls -la public/build/ 2>/dev/null || echo 'No build directory found'" >> /start.sh \
+    && echo "ls -la public/build/assets/ 2>/dev/null || echo 'No assets directory found'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Clear all caches and rebuild" >> /start.sh \
     && echo "echo '=== CLEARING ALL CACHES ==='" >> /start.sh \
