@@ -183,23 +183,34 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
+    && echo "# Show all environment variables for debugging" >> /start.sh \
+    && echo "echo '=== ENVIRONMENT VARIABLES ==='" >> /start.sh \
+    && echo "env | grep -E '(DATABASE|RAILWAY|POSTGRES)' | sort" >> /start.sh \
+    && echo " " >> /start.sh \
     && echo "# Update database configuration for PostgreSQL" >> /start.sh \
     && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
     && echo "# Use DATABASE_URL to extract connection details" >> /start.sh \
     && echo "if [ ! -z \"\$DATABASE_URL\" ]; then" >> /start.sh \
-    && echo "    echo 'Using DATABASE_URL environment variable'" >> /start.sh \
+    && echo "    echo '=== FOUND DATABASE_URL ==='" >> /start.sh \
+    && echo "    echo \"DATABASE_URL: \$DATABASE_URL\"" >> /start.sh \
     && echo "    # Parse DATABASE_URL: postgresql://user:pass@host:port/db" >> /start.sh \
     && echo "    DB_HOST=\$(echo \$DATABASE_URL | sed -n 's/.*@\\([^:]*\\):.*/\\1/p')" >> /start.sh \
     && echo "    DB_PORT=\$(echo \$DATABASE_URL | sed -n 's/.*:\\([0-9]*\\)\\/.*/\\1/p')" >> /start.sh \
     && echo "    DB_DATABASE=\$(echo \$DATABASE_URL | sed -n 's/.*\\/\\([^?]*\\).*/\\1/p')" >> /start.sh \
     && echo "    DB_USERNAME=\$(echo \$DATABASE_URL | sed -n 's/.*:\\/\\/[^:]*:\\([^@]*\\)@.*/\\1/p')" >> /start.sh \
     && echo "    DB_PASSWORD=\$(echo \$DATABASE_URL | sed -n 's/.*:\\/\\/[^:]*:[^@]*@[^:]*:\\([^@]*\\)@.*/\\1/p')" >> /start.sh \
+    && echo "    echo \"Parsed DB_HOST: \$DB_HOST\"" >> /start.sh \
+    && echo "    echo \"Parsed DB_PORT: \$DB_PORT\"" >> /start.sh \
+    && echo "    echo \"Parsed DB_DATABASE: \$DB_DATABASE\"" >> /start.sh \
+    && echo "    echo \"Parsed DB_USERNAME: \$DB_USERNAME\"" >> /start.sh \
+    && echo "    echo \"Parsed DB_PASSWORD: [HIDDEN]\"" >> /start.sh \
     && echo "    sed -i \"s/# DB_HOST=127.0.0.1/DB_HOST=\$DB_HOST/\" .env" >> /start.sh \
     && echo "    sed -i \"s/# DB_PORT=3306/DB_PORT=\$DB_PORT/\" .env" >> /start.sh \
     && echo "    sed -i \"s/# DB_DATABASE=laravel/DB_DATABASE=\$DB_DATABASE/\" .env" >> /start.sh \
     && echo "    sed -i \"s/# DB_USERNAME=root/DB_USERNAME=\$DB_USERNAME/\" .env" >> /start.sh \
     && echo "    sed -i \"s/# DB_PASSWORD=/DB_PASSWORD=\$DB_PASSWORD/\" .env" >> /start.sh \
     && echo "else" >> /start.sh \
+    && echo "    echo '=== DATABASE_URL NOT FOUND ==='" >> /start.sh \
     && echo "    echo 'DATABASE_URL not found, using fallback variables'" >> /start.sh \
     && echo "    sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=\${RAILWAY_PRIVATE_SERVICE_HOSTNAME}/' .env" >> /start.sh \
     && echo "    sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
@@ -209,7 +220,7 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Debug: Show current database configuration" >> /start.sh \
-    && echo "echo 'Database configuration:'" >> /start.sh \
+    && echo "echo '=== FINAL DATABASE CONFIGURATION ==='" >> /start.sh \
     && echo "grep 'DB_' .env | grep -v '^#'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Clear and rebuild caches with new database config" >> /start.sh \
@@ -221,18 +232,24 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
     && echo "php artisan config:cache" >> /start.sh \
     && echo " " >> /start.sh \
+    && echo "# Test basic Laravel functionality" >> /start.sh \
+    && echo "echo '=== TESTING LARAVEL ==='" >> /start.sh \
+    && echo "php artisan --version || echo 'Laravel CLI failed'" >> /start.sh \
+    && echo "php artisan route:list | head -5 || echo 'Route list failed'" >> /start.sh \
+    && echo " " >> /start.sh \
     && echo "# Try database connection with timeout" >> /start.sh \
-    && echo "echo 'Testing database connection...'" >> /start.sh \
-    && echo "timeout 10 php artisan tinker --execute=\"DB::connection()->getPdo(); echo 'Database connection successful';\" 2>/dev/null || echo 'Database connection failed but continuing...'" >> /start.sh \
+    && echo "echo '=== TESTING DATABASE CONNECTION ==='" >> /start.sh \
+    && echo "timeout 10 php artisan tinker --execute=\"DB::connection()->getPdo(); echo 'Database connection successful';\" 2>/dev/null || echo 'Database connection failed'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Run migrations with error handling" >> /start.sh \
-    && echo "echo 'Running database migrations...'" >> /start.sh \
-    && echo "php artisan migrate --force || echo 'Migrations failed but continuing...'" >> /start.sh \
+    && echo "echo '=== RUNNING MIGRATIONS ==='" >> /start.sh \
+    && echo "php artisan migrate --force || echo 'Migrations failed'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
-    && echo "echo 'Starting Apache web server...'" >> /start.sh \
-    && echo "echo 'Application logs will be available at: /var/www/html/storage/logs/laravel.log'" >> /start.sh \
-    && echo "echo 'Apache error logs will be available at: /var/log/apache2/error.log'" >> /start.sh \
+    && echo "echo '=== STARTING APACHE ==='" >> /start.sh \
+    && echo "echo 'Application logs: /var/www/html/storage/logs/laravel.log'" >> /start.sh \
+    && echo "echo 'Apache logs: /var/log/apache2/error.log'" >> /start.sh \
+    && echo "echo 'Application URL: https://computerrepairsystem-production.up.railway.app/'" >> /start.sh \
     && echo "apache2ctl -D FOREGROUND" >> /start.sh \
     && chmod +x /start.sh
 
