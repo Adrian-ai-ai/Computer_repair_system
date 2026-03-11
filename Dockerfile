@@ -104,6 +104,9 @@ RUN /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interact
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
+# Install Node dependencies (but DON'T build assets - they're gitignored)
+RUN npm install
+
 # Create .env file if it doesn't exist and set permissions
 RUN if [ ! -f .env ]; then cp .env.example .env; fi \
     && chmod 644 .env \
@@ -208,14 +211,9 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "    touch database/database.sqlite && chmod 666 database/database.sqlite" >> /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Check if assets exist and build if needed" >> /start.sh \
-    && echo "echo '=== CHECKING ASSETS ==='" >> /start.sh \
-    && echo "if [ ! -f 'public/build/assets/app-CwOe-VqD.css' ]; then" >> /start.sh \
-    && echo "    echo 'Assets not found, building with Vite...'" >> /start.sh \
-    && echo "    npm run build" >> /start.sh \
-    && echo "else" >> /start.sh \
-    && echo "    echo 'Assets already exist'" >> /start.sh \
-    && echo "fi" >> /start.sh \
+    && echo "# Build assets at runtime since they're gitignored" >> /start.sh \
+    && echo "echo '=== BUILDING ASSETS AT RUNTIME ==='" >> /start.sh \
+    && echo "npm run build" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Fix asset permissions for Apache" >> /start.sh \
     && echo "echo '=== FIXING ASSET PERMISSIONS ==='" >> /start.sh \
