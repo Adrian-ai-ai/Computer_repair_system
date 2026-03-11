@@ -112,19 +112,12 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
 # Set production environment variables for proper asset loading
 RUN sed -i 's/APP_ENV=local/APP_ENV=production/' .env \
     && sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env \
-    && sed -i 's/APP_URL=http:\/\/localhost/APP_URL=https:\/\/computerrepairsystem-production.up.railway.app\//' .env \
-    && sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env \
-    && sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=${RAILWAY_PRIVATE_SERVICE_HOSTNAME}/' .env \
-    && sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env \
-    && sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=${RAILWAY_ENVIRONMENT}/' .env \
-    && sed -i 's/# DB_USERNAME=root/DB_USERNAME=${POSTGRES_USER}/' .env \
-    && sed -i 's/# DB_PASSWORD=/DB_PASSWORD=${POSTGRES_PASSWORD}/' .env
+    && sed -i 's/APP_URL=http:\/\/localhost/APP_URL=https:\/\/computerrepairsystem-production.up.railway.app\//' .env
 
-# Laravel optimizations
+# Laravel optimizations (without database migrations for now)
 RUN php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache \
-    && php artisan migrate --force \
     && php artisan storage:link
 
 # Build frontend assets
@@ -189,6 +182,21 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "    exit 1" >> /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Update database configuration for PostgreSQL" >> /start.sh \
+    && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=\${RAILWAY_PRIVATE_SERVICE_HOSTNAME}/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=\${RAILWAY_ENVIRONMENT}/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=\${POSTGRES_USER}/' .env" >> /start.sh \
+    && echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=\${POSTGRES_PASSWORD}/' .env" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Clear and rebuild caches with new database config" >> /start.sh \
+    && echo "php artisan config:clear" >> /start.sh \
+    && echo "php artisan config:cache" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Run database migrations at runtime" >> /start.sh \
+    && echo "php artisan migrate --force" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
     && echo "apache2ctl -D FOREGROUND" >> /start.sh \
