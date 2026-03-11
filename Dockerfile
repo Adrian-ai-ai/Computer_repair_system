@@ -208,6 +208,10 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "    touch database/database.sqlite && chmod 666 database/database.sqlite" >> /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
+    && echo "# Build Vite assets to fix styling" >> /start.sh \
+    && echo "echo '=== BUILDING VITE ASSETS ==='" >> /start.sh \
+    && echo "npm run build || echo 'Vite build failed, but continuing...'" >> /start.sh \
+    && echo " " >> /start.sh \
     && echo "# Clear all caches and rebuild" >> /start.sh \
     && echo "echo '=== CLEARING ALL CACHES ==='" >> /start.sh \
     && echo "php artisan config:clear" >> /start.sh \
