@@ -216,6 +216,11 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "php artisan config:clear" >> /start.sh \
     && echo "php artisan config:cache" >> /start.sh \
     && echo " " >> /start.sh \
+    && echo "# Enable detailed error logging" >> /start.sh \
+    && echo "sed -i 's/APP_DEBUG=false/APP_DEBUG=true/' .env" >> /start.sh \
+    && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
+    && echo "php artisan config:cache" >> /start.sh \
+    && echo " " >> /start.sh \
     && echo "# Try database connection with timeout" >> /start.sh \
     && echo "echo 'Testing database connection...'" >> /start.sh \
     && echo "timeout 10 php artisan tinker --execute=\"DB::connection()->getPdo(); echo 'Database connection successful';\" 2>/dev/null || echo 'Database connection failed but continuing...'" >> /start.sh \
@@ -226,6 +231,8 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
     && echo "echo 'Starting Apache web server...'" >> /start.sh \
+    && echo "echo 'Application logs will be available at: /var/www/html/storage/logs/laravel.log'" >> /start.sh \
+    && echo "echo 'Apache error logs will be available at: /var/log/apache2/error.log'" >> /start.sh \
     && echo "apache2ctl -D FOREGROUND" >> /start.sh \
     && chmod +x /start.sh
 
