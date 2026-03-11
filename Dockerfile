@@ -183,15 +183,10 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Show ALL environment variables to see what Railway actually provides" >> /start.sh \
-    && echo "echo '=== ALL ENVIRONMENT VARIABLES FROM RAILWAY ==='" >> /start.sh \
-    && echo "printenv | sort" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Update database configuration for PostgreSQL" >> /start.sh \
+    && echo "# Use correct Railway PostgreSQL URL from environment variables" >> /start.sh \
     && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
-    && echo "# For now, use hardcoded values that we know work for Railway PostgreSQL" >> /start.sh \
-    && echo "echo 'Using known Railway PostgreSQL configuration...'" >> /start.sh \
-    && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=hopper.proxy.rlwy.net/' .env" >> /start.sh \
+    && echo "echo 'Using correct Railway PostgreSQL configuration...'" >> /start.sh \
+    && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=postgres-production-c2c4.up.railway.app/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=railway/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=postgres/' .env" >> /start.sh \
