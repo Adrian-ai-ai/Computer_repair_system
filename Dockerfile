@@ -192,19 +192,6 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=postgres/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=VaZwHfotxlquvIJcxNQSAAzRAVQSmjaI/' .env" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Debug: Show current database configuration" >> /start.sh \
-    && echo "echo '=== FINAL DATABASE CONFIGURATION ==='" >> /start.sh \
-    && echo "grep 'DB_' .env | grep -v '^#'" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Clear and rebuild caches with new database config" >> /start.sh \
-    && echo "php artisan config:clear" >> /start.sh \
-    && echo "php artisan config:cache" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Enable detailed error logging" >> /start.sh \
-    && echo "sed -i 's/APP_DEBUG=false/APP_DEBUG=true/' .env" >> /start.sh \
-    && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
-    && echo "php artisan config:cache" >> /start.sh \
-    && echo " " >> /start.sh \
     && echo "# Test PostgreSQL connection with correct Railway host" >> /start.sh \
     && echo "echo '=== TESTING POSTGRESQL CONNECTION ==='" >> /start.sh \
     && echo "echo 'Using Railway internal host: postgres.railway.internal:5432'" >> /start.sh \
@@ -219,8 +206,32 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "    sed -i 's/DB_USERNAME=.*/# DB_USERNAME=/' .env" >> /start.sh \
     && echo "    sed -i 's/DB_PASSWORD=.*/# DB_PASSWORD=/' .env" >> /start.sh \
     && echo "    touch database/database.sqlite && chmod 666 database/database.sqlite" >> /start.sh \
-    && echo "    php artisan config:clear && php artisan config:cache" >> /start.sh \
     && echo "fi" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Clear all caches and rebuild" >> /start.sh \
+    && echo "echo '=== CLEARING ALL CACHES ==='" >> /start.sh \
+    && echo "php artisan config:clear" >> /start.sh \
+    && echo "php artisan route:clear" >> /start.sh \
+    && echo "php artisan view:clear" >> /start.sh \
+    && echo "php artisan cache:clear" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Enable detailed error logging" >> /start.sh \
+    && echo "sed -i 's/APP_DEBUG=false/APP_DEBUG=true/' .env" >> /start.sh \
+    && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Rebuild caches" >> /start.sh \
+    && echo "echo '=== REBUILDING CACHES ==='" >> /start.sh \
+    && echo "php artisan config:cache" >> /start.sh \
+    && echo "php artisan route:cache" >> /start.sh \
+    && echo "php artisan view:cache" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Ensure storage link exists" >> /start.sh \
+    && echo "echo '=== CREATING STORAGE LINKS ==='" >> /start.sh \
+    && echo "php artisan storage:link" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Debug: Show current database configuration" >> /start.sh \
+    && echo "echo '=== FINAL DATABASE CONFIGURATION ==='" >> /start.sh \
+    && echo "grep 'DB_' .env | grep -v '^#'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Run migrations with error handling" >> /start.sh \
     && echo "echo '=== RUNNING MIGRATIONS ==='" >> /start.sh \
