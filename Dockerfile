@@ -114,6 +114,11 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
     && chmod 644 .env \
     && php artisan key:generate --force
 
+# Set production environment variables for proper asset loading
+RUN sed -i 's/APP_ENV=local/APP_ENV=production/' .env \
+    && sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env \
+    && sed -i 's/APP_URL=http:\/\/localhost/APP_URL=https:\/\/computerrepairsystem-production.up.railway.app\//' .env
+
 # Laravel optimizations
 RUN php artisan config:cache \
     && php artisan route:cache \
@@ -132,6 +137,15 @@ RUN chown -R www-data:www-data public/build \
     && ls -la public/build/ \
     && echo "Checking manifest.json content:" \
     && cat public/build/manifest.json || echo "manifest.json not found"
+
+# Clear and rebuild caches with production settings
+RUN php artisan config:clear \
+    && php artisan route:clear \
+    && php artisan view:clear \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache \
+    && php artisan optimize
 
 # Create Apache virtual host configuration using echo
 RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
