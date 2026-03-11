@@ -210,17 +210,23 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo " " >> /start.sh \
     && echo "# Check if assets exist and build if needed" >> /start.sh \
     && echo "echo '=== CHECKING ASSETS ==='" >> /start.sh \
-    && echo "if [ ! -f 'public/build/assets/app.css' ]; then" >> /start.sh \
+    && echo "if [ ! -f 'public/build/assets/app-CwOe-VqD.css' ]; then" >> /start.sh \
     && echo "    echo 'Assets not found, building with Vite...'" >> /start.sh \
     && echo "    npm run build" >> /start.sh \
     && echo "else" >> /start.sh \
     && echo "    echo 'Assets already exist'" >> /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
+    && echo "# Fix asset permissions for Apache" >> /start.sh \
+    && echo "echo '=== FIXING ASSET PERMISSIONS ==='" >> /start.sh \
+    && echo "chown -R www-data:www-data public/build/" >> /start.sh \
+    && echo "chmod -R 755 public/build/" >> /start.sh \
+    && echo " " >> /start.sh \
     && echo "# List built assets for debugging" >> /start.sh \
     && echo "echo '=== BUILT ASSETS ==='" >> /start.sh \
-    && echo "ls -la public/build/ 2>/dev/null || echo 'No build directory found'" >> /start.sh \
-    && echo "ls -la public/build/assets/ 2>/dev/null || echo 'No assets directory found'" >> /start.sh \
+    && echo "ls -la public/build/" >> /start.sh \
+    && echo "ls -la public/build/assets/" >> /start.sh \
+    && echo "cat public/build/manifest.json" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Clear all caches and rebuild" >> /start.sh \
     && echo "echo '=== CLEARING ALL CACHES ==='" >> /start.sh \
