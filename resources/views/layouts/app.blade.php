@@ -11,8 +11,17 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <!-- Production Assets - Direct Path -->
+        @if(app()->environment('production'))
+            @if(file_exists(public_path('build/manifest.json')))
+                @vite(['resources/css/app.css', 'resources/js/app.js'])
+            @else
+                <link rel="stylesheet" href="{{ asset('build/assets/app-DONBQu_T.css') }}">
+                <script src="{{ asset('build/assets/app-BXS-Op9n.js') }}" defer></script>
+            @endif
+        @else
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endif
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">

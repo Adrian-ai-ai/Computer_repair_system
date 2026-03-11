@@ -226,11 +226,15 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "chown -R www-data:www-data public/build/" >> /start.sh \
     && echo "chmod -R 755 public/build/" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# List built assets for debugging" >> /start.sh \
-    && echo "echo '=== BUILT ASSETS ==='" >> /start.sh \
-    && echo "ls -la public/build/" >> /start.sh \
-    && echo "ls -la public/build/assets/" >> /start.sh \
-    && echo "cat public/build/manifest.json" >> /start.sh \
+    && echo "# Debug asset loading in production" >> /start.sh \
+    && echo "echo '=== DEBUGGING ASSET LOADING ==='" >> /start.sh \
+    && echo "echo 'APP_ENV:'" >> /start.sh \
+    && echo "grep 'APP_ENV' .env" >> /start.sh \
+    && echo "echo 'APP_URL:'" >> /start.sh \
+    && echo "grep 'APP_URL' .env" >> /start.sh \
+    && echo "echo 'Testing direct asset access:'" >> /start.sh \
+    && echo "curl -I http://localhost/build/assets/app-DONBQu_T.css 2>/dev/null | head -1 || echo 'CSS file not accessible via HTTP'" >> /start.sh \
+    && echo "curl -I http://localhost/build/assets/app-BXS-Op9n.js 2>/dev/null | head -1 || echo 'JS file not accessible via HTTP'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Clear all caches and rebuild" >> /start.sh \
     && echo "echo '=== CLEARING ALL CACHES ==='" >> /start.sh \
