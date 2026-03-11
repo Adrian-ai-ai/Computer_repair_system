@@ -183,14 +183,34 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Update database configuration for PostgreSQL" >> /start.sh \
+    && echo "# Test basic network connectivity" >> /start.sh \
+    && echo "echo '=== TESTING NETWORK CONNECTIVITY ==='" >> /start.sh \
+    && echo "ping -c 2 postgres-production-c2c4.up.railway.app || echo 'Network ping failed'" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# Try PostgreSQL first, fallback to SQLite if it fails" >> /start.sh \
+    && echo "echo '=== TESTING DATABASE CONFIGURATION ==='" >> /start.sh \
     && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
-    && echo "echo 'Using Railway PostgreSQL configuration...'" >> /start.sh \
     && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=postgres-production-c2c4.up.railway.app/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=railway/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=postgres/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=VaZwHfotxlquvIJcxNQSAAzRAVQSmjaI/' .env" >> /start.sh \
+    && echo "php artisan tinker --execute=\"try { DB::connection()->getPdo(); echo 'PostgreSQL: SUCCESS'; } catch (Exception \$e) { echo 'PostgreSQL: FAILED - ' . \$e->getMessage(); }\"" >> /start.sh \
+    && echo " " >> /start.sh \
+    && echo "# If PostgreSQL fails, fallback to SQLite" >> /start.sh \
+    && echo "if ! php artisan tinker --execute=\"try { DB::connection()->getPdo(); echo 'OK'; exit 0; } catch (Exception \$e) { exit 1; }\" 2>/dev/null; then" >> /start.sh \
+    && echo "    echo 'PostgreSQL connection failed, switching to SQLite...'" >> /start.sh \
+    && echo "    sed -i 's/DB_CONNECTION=pgsql/DB_CONNECTION=sqlite/' .env" >> /start.sh \
+    && echo "    sed -i 's/DB_HOST=.*/# DB_HOST=127.0.0.1/' .env" >> /start.sh \
+    && echo "    sed -i 's/DB_PORT=.*/# DB_PORT=3306/' .env" >> /start.sh \
+    && echo "    sed -i 's/DB_DATABASE=.*/# DB_DATABASE=database.sqlite/' .env" >> /start.sh \
+    && echo "    sed -i 's/DB_USERNAME=.*/# DB_USERNAME=/' .env" >> /start.sh \
+    && echo "    sed -i 's/DB_PASSWORD=.*/# DB_PASSWORD=/' .env" >> /start.sh \
+    && echo "    touch database/database.sqlite" >> /start.sh \
+    && echo "    chmod 666 database/database.sqlite" >> /start.sh \
+    && echo "else" >> /start.sh \
+    && echo "    echo 'PostgreSQL connection successful!'" >> /start.sh \
+    && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Debug: Show current database configuration" >> /start.sh \
     && echo "echo '=== FINAL DATABASE CONFIGURATION ==='" >> /start.sh \
@@ -205,13 +225,9 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
     && echo "php artisan config:cache" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Test Laravel database connection" >> /start.sh \
-    && echo "echo '=== TESTING LARAVEL DATABASE CONNECTION ==='" >> /start.sh \
-    && echo "php artisan tinker --execute=\"try { DB::connection()->getPdo(); echo 'Laravel DB connection: SUCCESS'; } catch (Exception \$e) { echo 'Laravel DB connection: FAILED - ' . \$e->getMessage(); }\"" >> /start.sh \
-    && echo " " >> /start.sh \
     && echo "# Run migrations with error handling" >> /start.sh \
     && echo "echo '=== RUNNING MIGRATIONS ==='" >> /start.sh \
-    && echo "php artisan migrate --force || echo 'Migrations failed - check Laravel error above'" >> /start.sh \
+    && echo "php artisan migrate --force || echo 'Migrations failed - check error above'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
     && echo "echo '=== STARTING APACHE ==='" >> /start.sh \
