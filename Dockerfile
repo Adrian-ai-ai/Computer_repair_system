@@ -115,18 +115,13 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
 
 # Set production environment variables for proper asset loading
 RUN sed -i 's/APP_ENV=local/APP_ENV=production/' .env \
-    && sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env \
-    && sed -i 's/APP_URL=http:\/\/localhost/APP_URL=https:\/\/computerrepairsystem-production.up.railway.app\//' .env
+    && sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
 
 # Laravel optimizations (without database migrations for now)
 RUN php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache \
     && php artisan storage:link
-
-# Build frontend assets
-RUN npm install \
-    && npm run build
 
 # Set proper permissions for build directory and verify assets
 RUN chown -R www-data:www-data public/build \
@@ -187,8 +182,17 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo "echo 'PHP-FPM is running'" >> /start.sh \
     && echo " " >> /start.sh \
+    && echo "# Set APP_URL dynamically using Railway's public domain" >> /start.sh \
+    && echo "echo '=== SETTING DYNAMIC APP_URL ===' " >> /start.sh \
+    && echo "if [ -n \"\$RAILWAY_PUBLIC_DOMAIN\" ]; then" >> /start.sh \
+    && echo "    sed -i \"s|APP_URL=.*|APP_URL=https://\$RAILWAY_PUBLIC_DOMAIN/|\" .env" >> /start.sh \
+    && echo "    echo \"APP_URL set to: https://\$RAILWAY_PUBLIC_DOMAIN/\"" >> /start.sh \
+    && echo "else" >> /start.sh \
+    && echo "    echo \"WARNING: RAILWAY_PUBLIC_DOMAIN not set\"" >> /start.sh \
+    && echo "fi" >> /start.sh \
+    && echo " " >> /start.sh \
     && echo "# Use correct Railway internal PostgreSQL from DATABASE_URL" >> /start.sh \
-    && echo "echo '=== USING CORRECT RAILWAY DATABASE ==='" >> /start.sh \
+    && echo "echo '=== USING CORRECT RAILWAY DATABASE ===' " >> /start.sh \
     && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=postgres.railway.internal/' .env" >> /start.sh \
     && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
@@ -197,7 +201,7 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=VaZwHfotxlquvIJcxNQSAAzRAVQSmjaI/' .env" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Test PostgreSQL connection with correct Railway host" >> /start.sh \
-    && echo "echo '=== TESTING POSTGRESQL CONNECTION ==='" >> /start.sh \
+    && echo "echo '=== TESTING POSTGRESQL CONNECTION ===' " >> /start.sh \
     && echo "echo 'Using Railway internal host: postgres.railway.internal:5432'" >> /start.sh \
     && echo "if timeout 10 php artisan tinker --execute='DB::connection()->getPdo(); echo \"SUCCESS\";' 2>/dev/null; then" >> /start.sh \
     && echo "    echo 'PostgreSQL connection successful!'" >> /start.sh \
@@ -213,7 +217,7 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Check if assets exist and verify they're accessible" >> /start.sh \
-    && echo "echo '=== CHECKING ASSETS ==='" >> /start.sh \
+    && echo "echo '=== CHECKING ASSETS ===' " >> /start.sh \
     && echo "if [ ! -d 'public/build/assets' ]; then" >> /start.sh \
     && echo "    echo 'ERROR: Assets directory not found!'" >> /start.sh \
     && echo "    ls -la public/" >> /start.sh \
@@ -222,54 +226,46 @@ RUN echo "#!/bin/bash" > /start.sh \
     && echo "fi" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Fix asset permissions for Apache" >> /start.sh \
-    && echo "echo '=== FIXING ASSET PERMISSIONS ==='" >> /start.sh \
+    && echo "echo '=== FIXING ASSET PERMISSIONS ===' " >> /start.sh \
     && echo "chown -R www-data:www-data public/build/" >> /start.sh \
     && echo "chmod -R 755 public/build/" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Debug asset loading in production" >> /start.sh \
-    && echo "echo '=== DEBUGGING ASSET LOADING ==='" >> /start.sh \
+    && echo "echo '=== DEBUGGING ASSET LOADING ===' " >> /start.sh \
     && echo "echo 'APP_ENV:'" >> /start.sh \
     && echo "grep 'APP_ENV' .env" >> /start.sh \
     && echo "echo 'APP_URL:'" >> /start.sh \
     && echo "grep 'APP_URL' .env" >> /start.sh \
-    && echo "echo 'Testing direct asset access:'" >> /start.sh \
-    && echo "curl -I http://localhost/build/assets/app-DONBQu_T.css 2>/dev/null | head -1 || echo 'CSS file not accessible via HTTP'" >> /start.sh \
-    && echo "curl -I http://localhost/build/assets/app-BXS-Op9n.js 2>/dev/null | head -1 || echo 'JS file not accessible via HTTP'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Clear all caches and rebuild" >> /start.sh \
-    && echo "echo '=== CLEARING ALL CACHES ==='" >> /start.sh \
+    && echo "echo '=== CLEARING ALL CACHES ===' " >> /start.sh \
     && echo "php artisan config:clear" >> /start.sh \
     && echo "php artisan route:clear" >> /start.sh \
     && echo "php artisan view:clear" >> /start.sh \
     && echo "php artisan cache:clear" >> /start.sh \
     && echo " " >> /start.sh \
-    && echo "# Enable detailed error logging" >> /start.sh \
-    && echo "sed -i 's/APP_DEBUG=false/APP_DEBUG=true/' .env" >> /start.sh \
-    && echo "sed -i 's/LOG_LEVEL=debug/LOG_LEVEL=debug/' .env" >> /start.sh \
-    && echo " " >> /start.sh \
     && echo "# Rebuild caches" >> /start.sh \
-    && echo "echo '=== REBUILDING CACHES ==='" >> /start.sh \
+    && echo "echo '=== REBUILDING CACHES ===' " >> /start.sh \
     && echo "php artisan config:cache" >> /start.sh \
     && echo "php artisan route:cache" >> /start.sh \
     && echo "php artisan view:cache" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Ensure storage link exists" >> /start.sh \
-    && echo "echo '=== CREATING STORAGE LINKS ==='" >> /start.sh \
+    && echo "echo '=== CREATING STORAGE LINKS ===' " >> /start.sh \
     && echo "php artisan storage:link" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Debug: Show current database configuration" >> /start.sh \
-    && echo "echo '=== FINAL DATABASE CONFIGURATION ==='" >> /start.sh \
+    && echo "echo '=== FINAL DATABASE CONFIGURATION ===' " >> /start.sh \
     && echo "grep 'DB_' .env | grep -v '^#'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Run migrations with error handling" >> /start.sh \
-    && echo "echo '=== RUNNING MIGRATIONS ==='" >> /start.sh \
+    && echo "echo '=== RUNNING MIGRATIONS ===' " >> /start.sh \
     && echo "php artisan migrate --force || echo 'Migrations failed - check error above'" >> /start.sh \
     && echo " " >> /start.sh \
     && echo "# Start Apache in foreground" >> /start.sh \
-    && echo "echo '=== STARTING APACHE ==='" >> /start.sh \
+    && echo "echo '=== STARTING APACHE ===' " >> /start.sh \
     && echo "echo 'Application logs: /var/www/html/storage/logs/laravel.log'" >> /start.sh \
     && echo "echo 'Apache logs: /var/log/apache2/error.log'" >> /start.sh \
-    && echo "echo 'Application URL: https://computerrepairsystem-production.up.railway.app/'" >> /start.sh \
     && echo "apache2ctl -D FOREGROUND" >> /start.sh \
     && chmod +x /start.sh
 
