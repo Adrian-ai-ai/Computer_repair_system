@@ -233,7 +233,11 @@ php artisan view:clear || true
 php artisan cache:clear || true
 
 echo '=== CREATING STORAGE LINK ==='
-php artisan storage:link || true
+if [ -L public/storage ] || [ -e public/storage ]; then
+    echo 'public/storage already exists, skipping storage:link'
+else
+    php artisan storage:link || true
+fi
 
 echo '=== RUNNING MIGRATIONS ==='
 php artisan migrate --force || true
