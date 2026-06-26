@@ -170,69 +170,81 @@ RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
     && echo "    DirectoryIndex index.php index.html" >> /etc/apache2/sites-available/000-default.conf \
     && echo "</VirtualHost>" >> /etc/apache2/sites-available/000-default.conf
 
-# Create startup script using echo
-RUN echo "#!/bin/bash" > /start.sh \
-    && echo "set -e" >> /start.sh \
-    && echo "service php8.2-fpm start" >> /start.sh \
-    && echo "sleep 2" >> /start.sh \
-    && echo "if ! pgrep -f 'php-fpm' > /dev/null; then" >> /start.sh \
-    && echo "    echo 'PHP-FPM failed to start, exiting...'" >> /start.sh \
-    && echo "    exit 1" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo "echo 'PHP-FPM is running'" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "if [ -n \"\$PORT\" ]; then" >> /start.sh \
-    && echo "    echo \"Using port \$PORT\"" >> /start.sh \
-    && echo "    sed -i \"s/Listen 80/Listen \$PORT/\" /etc/apache2/ports.conf" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "if [ -n \"\$RENDER_EXTERNAL_URL\" ]; then" >> /start.sh \
-    && echo "    echo \"Setting APP_URL from RENDER_EXTERNAL_URL\"" >> /start.sh \
-    && echo "    sed -i \"s|^APP_URL=.*|APP_URL=\\\"\$RENDER_EXTERNAL_URL\\\"|\" .env" >> /start.sh \
-    && echo "elif [ -n \"\$APP_URL\" ]; then" >> /start.sh \
-    && echo "    echo \"Setting APP_URL from environment\"" >> /start.sh \
-    && echo "    sed -i \"s|^APP_URL=.*|APP_URL=\\\"\$APP_URL\\\"|\" .env" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "for var in DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD; do" >> /start.sh \
-    && echo "    value=\"\${var}\"" >> /start.sh \
-    && echo "    if [ -n \"\${!var}\" ]; then" >> /start.sh \
-    && echo "        echo \"Applying \$var from environment\"" >> /start.sh \
-    && echo "        sed -i \"s|^\$var=.*|\$var=\\\"\${!var}\\\"|\" .env" >> /start.sh \
-    && echo "    fi" >> /start.sh \
-    && echo "done" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Check if assets exist and verify they're accessible" >> /start.sh \
-    && echo "echo '=== CHECKING ASSETS ===' " >> /start.sh \
-    && echo "if [ ! -d 'public/build/assets' ]; then" >> /start.sh \
-    && echo "    echo 'ERROR: Assets directory not found!'" >> /start.sh \
-    && echo "    ls -la public/" >> /start.sh \
-    && echo "else" >> /start.sh \
-    && echo "    echo 'Assets directory found'" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Fix asset permissions for Apache" >> /start.sh \
-    && echo "echo '=== FIXING ASSET PERMISSIONS ===' " >> /start.sh \
-    && echo "chown -R www-data:www-data public/build/" >> /start.sh \
-    && echo "chmod -R 755 public/build/" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "echo '=== CLEARING CACHES ==='" >> /start.sh \
-    && echo "php artisan config:clear || true" >> /start.sh \
-    && echo "php artisan route:clear || true" >> /start.sh \
-    && echo "php artisan view:clear || true" >> /start.sh \
-    && echo "php artisan cache:clear || true" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "echo '=== CREATING STORAGE LINK ==='" >> /start.sh \
-    && echo "php artisan storage:link || true" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "echo '=== RUNNING MIGRATIONS ==='" >> /start.sh \
-    && echo "php artisan migrate --force || true" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "echo '=== STARTING APACHE ==='" >> /start.sh \
-    && echo "echo 'Application logs: /var/www/html/storage/logs/laravel.log'" >> /start.sh \
-    && echo "echo 'Apache logs: /var/log/apache2/error.log'" >> /start.sh \
-    && echo "apache2ctl -D FOREGROUND" >> /start.sh \
-    && chmod +x /start.sh
+# Create startup script using heredoc
+RUN cat > /start.sh <<'EOF'
+#!/bin/bash
+set -e
+
+service php8.2-fpm start
+sleep 2
+if ! pgrep -f 'php-fpm' > /dev/null; then
+    echo 'PHP-FPM failed to start, exiting...'
+    exit 1
+fi
+
+echo 'PHP-FPM is running'
+
+if [ -n "$PORT" ]; then
+    echo "Using port $PORT"
+    sed -i "s@Listen 80@Listen $PORT@" /etc/apache2/ports.conf
+fi
+
+if [ -n "$RENDER_EXTERNAL_URL" ]; then
+    echo 'Setting APP_URL from RENDER_EXTERNAL_URL'
+    sed -i "s|^APP_URL=.*|APP_URL=\"$RENDER_EXTERNAL_URL\"|" .env
+elif [ -n "$APP_URL" ]; then
+    echo 'Setting APP_URL from environment'
+    sed -i "s|^APP_URL=.*|APP_URL=\"$APP_URL\"|" .env
+fi
+
+for var in DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD; do
+    if [ -n "${!var}" ]; then
+        echo "Applying $var from environment"
+        sed -i "s|^$var=.*|$var=\"${!var}\"|" .env
+    fi
+done
+
+echo '=== CHECKING ASSETS ==='
+if [ ! -d 'public/build/assets' ]; then
+    echo 'ERROR: Assets directory not found!'
+    ls -la public/
+else
+    echo 'Assets directory found'
+fi
+
+echo '=== FIXING ASSET PERMISSIONS ==='
+chown -R www-data:www-data public/build/
+chmod -R 755 public/build/
+
+echo '=== PREPARING DATABASE ==='
+if grep -q '^DB_CONNECTION=sqlite' .env; then
+    mkdir -p database
+    if [ ! -f database/database.sqlite ]; then
+        touch database/database.sqlite
+        chmod 666 database/database.sqlite
+        echo 'Created SQLite database file'
+    fi
+fi
+
+echo '=== CLEARING CACHES ==='
+php artisan config:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
+php artisan cache:clear || true
+
+echo '=== CREATING STORAGE LINK ==='
+php artisan storage:link || true
+
+echo '=== RUNNING MIGRATIONS ==='
+php artisan migrate --force || true
+
+echo '=== STARTING APACHE ==='
+echo 'Application logs: /var/www/html/storage/logs/laravel.log'
+echo 'Apache logs: /var/log/apache2/error.log'
+apache2ctl -D FOREGROUND
+EOF
+
+RUN chmod +x /start.sh
 
 # Expose port 80
 EXPOSE 80
