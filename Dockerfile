@@ -113,17 +113,7 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
     && chmod 644 .env \
     && php artisan key:generate --force
 
-# Set production environment variables for proper asset loading
-RUN sed -i 's/APP_ENV=local/APP_ENV=production/' .env \
-    && sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
-
-# Laravel optimizations (without database migrations for now)
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && php artisan storage:link
-
-# Set proper permissions for build directory and verify assets
+# Prepare build output and storage permissions for runtime
 RUN chown -R www-data:www-data public/build \
     && chmod -R 755 public/build \
     && echo "Checking if manifest.json exists:" \
@@ -131,44 +121,37 @@ RUN chown -R www-data:www-data public/build \
     && echo "Checking manifest.json content:" \
     && cat public/build/manifest.json || echo "manifest.json not found"
 
-# Clear and rebuild caches with production settings
-RUN php artisan config:clear \
-    && php artisan route:clear \
-    && php artisan view:clear \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && php artisan optimize
+# Create Apache virtual host configuration using heredoc
+RUN cat > /etc/apache2/sites-available/000-default.conf <<'EOF'
+<VirtualHost *:80>
+    ServerName localhost
+    DocumentRoot /var/www/html/public
 
-# Create Apache virtual host configuration using echo
-RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
-    && echo "    ServerName localhost" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    DocumentRoot /var/www/html/public" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    <Directory /var/www/html/public>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Options Indexes FollowSymLinks" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        AllowOverride All" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Require all granted" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    </Directory>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    # Serve static assets directly" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    <Directory /var/www/html/public/build>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Options -Indexes" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        AllowOverride None" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Require all granted" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    </Directory>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    ErrorLog \${APACHE_LOG_DIR}/error.log" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    CustomLog \${APACHE_LOG_DIR}/access.log combined" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    # Proxy PHP requests to PHP-FPM" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    <FilesMatch \.php$>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        SetHandler \"proxy:fcgi://127.0.0.1:9000\"" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    </FilesMatch>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://127.0.0.1:9000/var/www/html/public/\$1" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    DirectoryIndex index.php index.html" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "</VirtualHost>" >> /etc/apache2/sites-available/000-default.conf
+    <Directory /var/www/html/public>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    <Directory /var/www/html/public/build>
+        Options -Indexes
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    <FilesMatch \.php$>
+        SetHandler "proxy:fcgi://127.0.0.1:9000"
+    </FilesMatch>
+
+    ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://127.0.0.1:9000/var/www/html/public/$1
+    DirectoryIndex index.php index.html
+</VirtualHost>
+EOF
+
+RUN a2ensite 000-default.conf || true
 
 # Create startup script using heredoc
 RUN cat > /start.sh <<'EOF'
@@ -226,11 +209,19 @@ if grep -q '^DB_CONNECTION=sqlite' .env; then
     fi
 fi
 
-echo '=== CLEARING CACHES ==='
+echo '=== GENERATING APP KEY IF REQUIRED ==='
+if grep -q '^APP_KEY=$' .env; then
+    php artisan key:generate --force || true
+fi
+
+echo '=== CLEARING AND REBUILDING CACHES ==='
 php artisan config:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
 php artisan cache:clear || true
+php artisan config:cache || true
+php artisan route:cache || true
+php artisan view:cache || true
 
 echo '=== CREATING STORAGE LINK ==='
 if [ -L public/storage ] || [ -e public/storage ]; then
