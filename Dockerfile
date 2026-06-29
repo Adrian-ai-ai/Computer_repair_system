@@ -152,7 +152,9 @@ RUN cat > /etc/apache2/sites-available/000-default.conf <<'EOF'
 EOF
 
 RUN a2dissite 000-default.conf || true \
-    && a2ensite 000-default.conf || true
+    && a2dissite default-ssl.conf || true \
+    && rm -f /etc/apache2/sites-enabled/* \
+    && a2ensite 000-default.conf
 
 # Create startup script using heredoc
 RUN cat > /start.sh <<'EOF'
