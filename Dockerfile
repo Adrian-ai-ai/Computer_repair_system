@@ -151,7 +151,8 @@ RUN cat > /etc/apache2/sites-available/000-default.conf <<'EOF'
 </VirtualHost>
 EOF
 
-RUN a2ensite 000-default.conf || true
+RUN a2dissite 000-default.conf || true \
+    && a2ensite 000-default.conf || true
 
 # Create startup script using heredoc
 RUN cat > /start.sh <<'EOF'
