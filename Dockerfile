@@ -113,17 +113,7 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
     && chmod 644 .env \
     && php artisan key:generate --force
 
-# Set production environment variables for proper asset loading
-RUN sed -i 's/APP_ENV=local/APP_ENV=production/' .env \
-    && sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
-
-# Laravel optimizations (without database migrations for now)
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && php artisan storage:link
-
-# Set proper permissions for build directory and verify assets
+# Prepare build output and storage permissions for runtime
 RUN chown -R www-data:www-data public/build \
     && chmod -R 755 public/build \
     && echo "Checking if manifest.json exists:" \
@@ -131,143 +121,128 @@ RUN chown -R www-data:www-data public/build \
     && echo "Checking manifest.json content:" \
     && cat public/build/manifest.json || echo "manifest.json not found"
 
-# Clear and rebuild caches with production settings
-RUN php artisan config:clear \
-    && php artisan route:clear \
-    && php artisan view:clear \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && php artisan optimize
+# Create Apache virtual host configuration using heredoc
+RUN cat > /etc/apache2/sites-available/000-default.conf <<'EOF'
+<VirtualHost *:80>
+    ServerName localhost
+    DocumentRoot /var/www/html/public
 
-# Create Apache virtual host configuration using echo
-RUN echo "<VirtualHost *:80>" > /etc/apache2/sites-available/000-default.conf \
-    && echo "    ServerName localhost" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    DocumentRoot /var/www/html/public" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    <Directory /var/www/html/public>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Options Indexes FollowSymLinks" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        AllowOverride All" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Require all granted" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    </Directory>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    # Serve static assets directly" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    <Directory /var/www/html/public/build>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Options -Indexes" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        AllowOverride None" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Require all granted" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    </Directory>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    ErrorLog \${APACHE_LOG_DIR}/error.log" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    CustomLog \${APACHE_LOG_DIR}/access.log combined" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    # Proxy PHP requests to PHP-FPM" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    <FilesMatch \.php$>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        SetHandler \"proxy:fcgi://127.0.0.1:9000\"" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    </FilesMatch>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    " >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://127.0.0.1:9000/var/www/html/public/\$1" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    DirectoryIndex index.php index.html" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "</VirtualHost>" >> /etc/apache2/sites-available/000-default.conf
+    <Directory /var/www/html/public>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
 
-# Create startup script using echo
-RUN echo "#!/bin/bash" > /start.sh \
-    && echo "# Start PHP-FPM" >> /start.sh \
-    && echo "service php8.2-fpm start" >> /start.sh \
-    && echo "sleep 2" >> /start.sh \
-    && echo "# Check if PHP-FPM is running" >> /start.sh \
-    && echo "if ! pgrep -f 'php-fpm' > /dev/null; then" >> /start.sh \
-    && echo "    echo 'PHP-FPM failed to start, exiting...'" >> /start.sh \
-    && echo "    exit 1" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo "echo 'PHP-FPM is running'" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Set APP_URL dynamically using Railway's public domain" >> /start.sh \
-    && echo "echo '=== SETTING DYNAMIC APP_URL ===' " >> /start.sh \
-    && echo "if [ -n \"\$RAILWAY_PUBLIC_DOMAIN\" ]; then" >> /start.sh \
-    && echo "    sed -i \"s|APP_URL=.*|APP_URL=https://\$RAILWAY_PUBLIC_DOMAIN/|\" .env" >> /start.sh \
-    && echo "    echo \"APP_URL set to: https://\$RAILWAY_PUBLIC_DOMAIN/\"" >> /start.sh \
-    && echo "else" >> /start.sh \
-    && echo "    echo \"WARNING: RAILWAY_PUBLIC_DOMAIN not set\"" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Use correct Railway internal PostgreSQL from DATABASE_URL" >> /start.sh \
-    && echo "echo '=== USING CORRECT RAILWAY DATABASE ===' " >> /start.sh \
-    && echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=pgsql/' .env" >> /start.sh \
-    && echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=postgres.railway.internal/' .env" >> /start.sh \
-    && echo "sed -i 's/# DB_PORT=3306/DB_PORT=5432/' .env" >> /start.sh \
-    && echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=railway/' .env" >> /start.sh \
-    && echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=postgres/' .env" >> /start.sh \
-    && echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=VaZwHfotxlquvIJcxNQSAAzRAVQSmjaI/' .env" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Test PostgreSQL connection with correct Railway host" >> /start.sh \
-    && echo "echo '=== TESTING POSTGRESQL CONNECTION ===' " >> /start.sh \
-    && echo "echo 'Using Railway internal host: postgres.railway.internal:5432'" >> /start.sh \
-    && echo "if timeout 10 php artisan tinker --execute='DB::connection()->getPdo(); echo \"SUCCESS\";' 2>/dev/null; then" >> /start.sh \
-    && echo "    echo 'PostgreSQL connection successful!'" >> /start.sh \
-    && echo "else" >> /start.sh \
-    && echo "    echo 'PostgreSQL connection failed, switching to SQLite...'" >> /start.sh \
-    && echo "    sed -i 's/DB_CONNECTION=pgsql/DB_CONNECTION=sqlite/' .env" >> /start.sh \
-    && echo "    sed -i 's/DB_HOST=.*/# DB_HOST=127.0.0.1/' .env" >> /start.sh \
-    && echo "    sed -i 's/DB_PORT=.*/# DB_PORT=3306/' .env" >> /start.sh \
-    && echo "    sed -i 's/DB_DATABASE=.*/DB_DATABASE=database.sqlite/' .env" >> /start.sh \
-    && echo "    sed -i 's/DB_USERNAME=.*/# DB_USERNAME=/' .env" >> /start.sh \
-    && echo "    sed -i 's/DB_PASSWORD=.*/# DB_PASSWORD=/' .env" >> /start.sh \
-    && echo "    touch database/database.sqlite && chmod 666 database/database.sqlite" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Check if assets exist and verify they're accessible" >> /start.sh \
-    && echo "echo '=== CHECKING ASSETS ===' " >> /start.sh \
-    && echo "if [ ! -d 'public/build/assets' ]; then" >> /start.sh \
-    && echo "    echo 'ERROR: Assets directory not found!'" >> /start.sh \
-    && echo "    ls -la public/" >> /start.sh \
-    && echo "else" >> /start.sh \
-    && echo "    echo 'Assets directory found'" >> /start.sh \
-    && echo "fi" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Fix asset permissions for Apache" >> /start.sh \
-    && echo "echo '=== FIXING ASSET PERMISSIONS ===' " >> /start.sh \
-    && echo "chown -R www-data:www-data public/build/" >> /start.sh \
-    && echo "chmod -R 755 public/build/" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Debug asset loading in production" >> /start.sh \
-    && echo "echo '=== DEBUGGING ASSET LOADING ===' " >> /start.sh \
-    && echo "echo 'APP_ENV:'" >> /start.sh \
-    && echo "grep 'APP_ENV' .env" >> /start.sh \
-    && echo "echo 'APP_URL:'" >> /start.sh \
-    && echo "grep 'APP_URL' .env" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Clear all caches and rebuild" >> /start.sh \
-    && echo "echo '=== CLEARING ALL CACHES ===' " >> /start.sh \
-    && echo "php artisan config:clear" >> /start.sh \
-    && echo "php artisan route:clear" >> /start.sh \
-    && echo "php artisan view:clear" >> /start.sh \
-    && echo "php artisan cache:clear" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Rebuild caches" >> /start.sh \
-    && echo "echo '=== REBUILDING CACHES ===' " >> /start.sh \
-    && echo "php artisan config:cache" >> /start.sh \
-    && echo "php artisan route:cache" >> /start.sh \
-    && echo "php artisan view:cache" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Ensure storage link exists" >> /start.sh \
-    && echo "echo '=== CREATING STORAGE LINKS ===' " >> /start.sh \
-    && echo "php artisan storage:link" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Debug: Show current database configuration" >> /start.sh \
-    && echo "echo '=== FINAL DATABASE CONFIGURATION ===' " >> /start.sh \
-    && echo "grep 'DB_' .env | grep -v '^#'" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Run migrations with error handling" >> /start.sh \
-    && echo "echo '=== RUNNING MIGRATIONS ===' " >> /start.sh \
-    && echo "php artisan migrate --force || echo 'Migrations failed - check error above'" >> /start.sh \
-    && echo " " >> /start.sh \
-    && echo "# Start Apache in foreground" >> /start.sh \
-    && echo "echo '=== STARTING APACHE ===' " >> /start.sh \
-    && echo "echo 'Application logs: /var/www/html/storage/logs/laravel.log'" >> /start.sh \
-    && echo "echo 'Apache logs: /var/log/apache2/error.log'" >> /start.sh \
-    && echo "apache2ctl -D FOREGROUND" >> /start.sh \
-    && chmod +x /start.sh
+    <Directory /var/www/html/public/build>
+        Options -Indexes
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    <FilesMatch \.php$>
+        SetHandler "proxy:fcgi://127.0.0.1:9000"
+    </FilesMatch>
+
+    ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://127.0.0.1:9000/var/www/html/public/$1
+    DirectoryIndex index.php index.html
+</VirtualHost>
+EOF
+
+RUN a2dissite 000-default.conf || true \
+    && a2dissite default-ssl.conf || true \
+    && rm -f /etc/apache2/sites-enabled/* \
+    && a2ensite 000-default.conf
+
+# Create startup script using heredoc
+RUN cat > /start.sh <<'EOF'
+#!/bin/bash
+set -e
+
+service php8.2-fpm start
+sleep 2
+if ! pgrep -f 'php-fpm' > /dev/null; then
+    echo 'PHP-FPM failed to start, exiting...'
+    exit 1
+fi
+
+echo 'PHP-FPM is running'
+
+if [ -n "$PORT" ]; then
+    echo "Using port $PORT"
+    sed -i "s@Listen 80@Listen $PORT@" /etc/apache2/ports.conf
+fi
+
+if [ -n "$RENDER_EXTERNAL_URL" ]; then
+    echo 'Setting APP_URL from RENDER_EXTERNAL_URL'
+    sed -i "s|^APP_URL=.*|APP_URL=\"$RENDER_EXTERNAL_URL\"|" .env
+elif [ -n "$APP_URL" ]; then
+    echo 'Setting APP_URL from environment'
+    sed -i "s|^APP_URL=.*|APP_URL=\"$APP_URL\"|" .env
+fi
+
+for var in DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD; do
+    if [ -n "${!var}" ]; then
+        echo "Applying $var from environment"
+        sed -i "s|^$var=.*|$var=\"${!var}\"|" .env
+    fi
+done
+
+echo '=== CHECKING ASSETS ==='
+if [ ! -d 'public/build/assets' ]; then
+    echo 'ERROR: Assets directory not found!'
+    ls -la public/
+else
+    echo 'Assets directory found'
+fi
+
+echo '=== FIXING ASSET PERMISSIONS ==='
+chown -R www-data:www-data public/build/
+chmod -R 755 public/build/
+
+echo '=== PREPARING DATABASE ==='
+if grep -q '^DB_CONNECTION=sqlite' .env; then
+    mkdir -p database
+    if [ ! -f database/database.sqlite ]; then
+        touch database/database.sqlite
+        chmod 666 database/database.sqlite
+        echo 'Created SQLite database file'
+    fi
+fi
+
+echo '=== GENERATING APP KEY IF REQUIRED ==='
+if grep -q '^APP_KEY=$' .env; then
+    php artisan key:generate --force || true
+fi
+
+echo '=== CLEARING AND REBUILDING CACHES ==='
+php artisan config:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
+php artisan cache:clear || true
+php artisan config:cache || true
+php artisan route:cache || true
+php artisan view:cache || true
+
+echo '=== CREATING STORAGE LINK ==='
+if [ -L public/storage ] || [ -e public/storage ]; then
+    echo 'public/storage already exists, skipping storage:link'
+else
+    php artisan storage:link || true
+fi
+
+echo '=== RUNNING MIGRATIONS ==='
+php artisan migrate --force || true
+
+echo '=== STARTING APACHE ==='
+echo 'Application logs: /var/www/html/storage/logs/laravel.log'
+echo 'Apache logs: /var/log/apache2/error.log'
+apache2ctl -D FOREGROUND
+EOF
+
+RUN chmod +x /start.sh
 
 # Expose port 80
 EXPOSE 80
