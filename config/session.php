@@ -169,7 +169,11 @@ return [
     |
     */
 
+<<<<<<< HEAD
     'secure' => env('SESSION_SECURE_COOKIE'),
+=======
+    'secure' => env('SESSION_SECURE_COOKIE', app()->environment('production')),
+>>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
 
     /*
     |--------------------------------------------------------------------------

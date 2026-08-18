@@ -356,6 +356,51 @@ class QuotationController extends Controller
         }
     }
 
+<<<<<<< HEAD
+=======
+    public function rejectQuotation($id)
+    {
+        try {
+            // Update quotation status
+            $updated = DB::table('quotations')
+                ->where('id', $id)
+                ->where('status', 'sent') // Only reject if currently sent
+                ->update(['status' => 'rejected']);
+
+            if (!$updated) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quotation not found or cannot be rejected'
+                ], 404);
+            }
+
+            // Get quotation details for job update
+            $quotation = DB::table('quotations')
+                ->where('id', $id)
+                ->first();
+
+            // Update job status back to Diagnosing for potential re-quotation
+            if ($quotation) {
+                DB::table('jobs')
+                    ->where('job_number', $quotation->job_number)
+                    ->update(['status' => 'Diagnosing']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quotation rejected successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to reject quotation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject quotation. Please try again.'
+            ], 500);
+        }
+    }
+
+>>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
     public function sendQuotation($id)
     {
         try {

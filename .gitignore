@@ -13,9 +13,15 @@
 /.zed
 /auth.json
 /node_modules
+<<<<<<< HEAD
 /public/build
 /public/hot
 /public/storage
+=======
+/public/hot
+/public/storage
+/public/build
+>>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
 /storage/*.key
 /storage/pail
 /vendor

@@ -142,6 +142,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/quotations/{id}', [QuotationController::class, 'show'])->name('quotations.show');
         Route::post('/quotations/{id}/email', [QuotationController::class, 'sendEmail'])->name('quotations.email');
         Route::post('/quotations/{id}/accept', [QuotationController::class, 'acceptQuotation'])->name('quotations.accept');
+<<<<<<< HEAD
+=======
+        Route::post('/quotations/{id}/reject', [QuotationController::class, 'rejectQuotation'])->name('quotations.reject');
+>>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
         Route::post('/quotations/{id}/send', [QuotationController::class, 'sendQuotation'])->name('quotations.send');
         Route::post('/quotations/{id}/update-prices', [QuotationController::class, 'updatePrices'])->name('quotations.update-prices');
     });

@@ -19,7 +19,14 @@
     RewriteRule ^ %1 [L,R=301]
 
     # Send Requests To Front Controller...
+<<<<<<< HEAD
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
+=======
+    # BUT: Don't rewrite requests for the /build directory (Vite assets)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_URI} !^/build/
+>>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
     RewriteRule ^ index.php [L]
 </IfModule>

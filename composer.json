@@ -52,8 +52,12 @@
             "@php artisan test"
         ],
         "post-autoload-dump": [
+<<<<<<< HEAD
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
+=======
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump"
+>>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
