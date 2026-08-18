@@ -11,7 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-<<<<<<< HEAD
         Schema::create('quotations', function (Blueprint $table) {
             $table->id();
             $table->string('job_number');
@@ -28,24 +27,6 @@ return new class extends Migration
             $table->foreign('client_id')->references('id')->on('clients');
             $table->foreign('created_by')->references('id')->on('users');
         });
-=======
-        // Migration commented out to prevent duplicate table error.
-        // Schema::create('quotations', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->string('job_number');
-        //     $table->unsignedBigInteger('client_id');
-        //     $table->decimal('subtotal', 10, 2);
-        //     $table->decimal('tax', 10, 2)->default(0);
-        //     $table->decimal('discount', 10, 2)->default(0);
-        //     $table->decimal('total_amount', 10, 2);
-        //     $table->string('status')->default('sent');
-        //     $table->date('valid_until');
-        //     $table->unsignedBigInteger('created_by');
-        //     $table->timestamps();
-        //     $table->foreign('client_id')->references('id')->on('clients');
-        //     $table->foreign('created_by')->references('id')->on('users');
-        // });
->>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
     }
 
     /**
@@ -53,10 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-<<<<<<< HEAD
         Schema::dropIfExists('quotations');
-=======
-        // Schema::dropIfExists('quotations');
->>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
     }
 };

@@ -12,14 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('job_parts_used', function (Blueprint $table) {
-<<<<<<< HEAD
             $table->boolean('is_warranty')->default(false)->after('quantity_used');
-=======
-            // Only add if it doesn't already exist
-            if (!Schema::hasColumn('job_parts_used', 'is_warranty')) {
-                $table->boolean('is_warranty')->default(false)->after('quantity_used');
-            }
->>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
         });
     }
 

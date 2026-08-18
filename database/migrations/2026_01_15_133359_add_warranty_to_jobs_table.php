@@ -18,10 +18,6 @@ return new class extends Migration
 
         $table->date('warranty_expiry_date')->nullable()->after('warranty_status');
         $table->date('purchase_date')->nullable();
-<<<<<<< HEAD
-        $table->date('warranty_expiry_date')->nullable();
-=======
->>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
         $table->boolean('is_under_warranty')->default(false);
     });
 }

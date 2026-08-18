@@ -356,8 +356,6 @@ class QuotationController extends Controller
         }
     }
 
-<<<<<<< HEAD
-=======
     public function rejectQuotation($id)
     {
         try {
@@ -400,7 +398,6 @@ class QuotationController extends Controller
         }
     }
 
->>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
     public function sendQuotation($id)
     {
         try {

@@ -9,18 +9,8 @@ define('LARAVEL_START', microtime(true));
 // Register the Composer autoloader...
 require __DIR__.'/vendor/autoload.php';
 
-<<<<<<< HEAD
 // Bootstrap Laravel and handle the command...
-/** @var Application $app */
-$app = require_once __DIR__.'/bootstrap/app.php';
-
-$status = $app->handleCommand(new ArgvInput);
-
-exit($status);
-=======
-// Debug: Check what's being resolved
 try {
-    // Bootstrap Laravel and handle the command...
     /** @var Application $app */
     $app = require_once __DIR__.'/bootstrap/app.php';
 
@@ -33,4 +23,3 @@ try {
     echo $e->getTraceAsString();
     exit(1);
 }
->>>>>>> 814c0e3a080a93b0a4c40958610f5493345a9fd8
