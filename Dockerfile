@@ -16,7 +16,7 @@ WORKDIR /app
 
 # Copy composer files and install dependencies
 COPY composer.json composer.lock* ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --classmap-authoritative
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 # Copy the rest of the project (so scripts, config are available for dump-autoload)
 COPY . .
