@@ -64,7 +64,7 @@ WORKDIR /var/www/html
 # Copy vendor from composer_builder (reduces time in runtime)
 COPY --from=composer_builder /app/vendor ./vendor
 # Copy the generated composer.lock if it exists
-COPY --from=composer_builder /app/composer.lock* ./composer.lock* || true
+COPY --from=composer_builder /app/composer.lock ./composer.lock || true
 # Copy built frontend files (Vite usually outputs to public/build)
 COPY --from=node_builder /app/public/build ./public/build
 
