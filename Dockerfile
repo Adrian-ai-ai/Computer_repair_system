@@ -14,9 +14,12 @@ RUN npm run build
 FROM composer:2 AS composer_builder
 WORKDIR /app
 
+# Set composer memory limit to prevent out of memory errors
+ENV COMPOSER_MEMORY_LIMIT=-1
+
 # Copy composer files and install dependencies
 COPY composer.json composer.lock* ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # Copy the rest of the project (so scripts, config are available for dump-autoload)
 COPY . .
@@ -60,8 +63,8 @@ WORKDIR /var/www/html
 # Copy application code (source), vendor and built frontend assets from build stages
 # Copy vendor from composer_builder (reduces time in runtime)
 COPY --from=composer_builder /app/vendor ./vendor
-# If you use config/cache or other artifacts created by composer scripts, copy them too
-COPY --from=composer_builder /app/composer.lock ./composer.lock
+# Copy the generated composer.lock if it exists
+COPY --from=composer_builder /app/composer.lock* ./composer.lock* || true
 # Copy built frontend files (Vite usually outputs to public/build)
 COPY --from=node_builder /app/public/build ./public/build
 
@@ -72,11 +75,6 @@ COPY . .
 RUN chown -R www-data:www-data /var/www/html \
  && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/build || true
 
-# Copy entrypoint script (see below)
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 EXPOSE 80
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
